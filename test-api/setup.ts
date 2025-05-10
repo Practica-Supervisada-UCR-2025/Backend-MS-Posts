@@ -4,6 +4,14 @@ import * as dotenv from 'dotenv';
 // Load environment variables
 dotenv.config({ path: '.env.test' });
 
+// Mock database
+jest.mock('../src/config/database', () => ({
+  pool: {
+    query: jest.fn(),
+    connect: jest.fn(),
+    end: jest.fn()
+  }
+}));
 
 // Global test setup
 beforeAll(async () => {
