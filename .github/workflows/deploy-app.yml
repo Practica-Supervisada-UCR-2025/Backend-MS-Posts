@@ -20,7 +20,7 @@ jobs:
       image_name: "backend-posts-app"
       container_name: "backend-posts-app"
       production_server_port: "3003"
-      program_assigned_port: "3003"
+      program_assigned_port: "3000"
       env_directory: "backend-posts-app"
 
     secrets:
