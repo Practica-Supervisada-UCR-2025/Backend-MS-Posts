@@ -12,7 +12,7 @@ import { PaginatedResponse, BasePost } from '../interfaces/posts.entities.interf
  * @returns An object containing the posts and metadata (total posts, total pages, current page).
  * @throws InternalServerError if fetching posts fails.
  */
-export const getUserPosts = async (user_id: string, page: number, limit: number): Promise<PaginatedResponse<BasePost>>=> {
+export const getUserPosts = async (user_id: string, page: number, limit: number): Promise<PaginatedResponse<BasePost>> => {
   try {
     const offset = (page - 1) * limit;
 
