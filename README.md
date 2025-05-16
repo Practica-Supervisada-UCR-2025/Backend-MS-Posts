@@ -1,6 +1,6 @@
 # Backend-MS-Base
 
-[![codecov](https://codecov.io/gh/Practica-Supervisada-UCR-2025/Backend-MS-Base/graph/badge.svg?token=M29OG2XDU6)](https://codecov.io/gh/Practica-Supervisada-UCR-2025/Backend-MS-Base)
+[![codecov](https://codecov.io/gh/Practica-Supervisada-UCR-2025/Backend-MS-Posts/graph/badge.svg?token=S22PMQUFOV)](https://codecov.io/gh/Practica-Supervisada-UCR-2025/Backend-MS-Posts)
 
 ## Project Overview
 

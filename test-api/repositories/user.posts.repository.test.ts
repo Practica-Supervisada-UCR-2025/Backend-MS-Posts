@@ -1,91 +1,100 @@
-import { getVisiblePostsByEmailPaginated, getTotalVisiblePostsByEmail } from '../../src/features/posts/repositories/user.posts.repository';
-import { jest } from '@jest/globals';
-import client from '../../src/config/database';
+import { getVisiblePostsByUserIdPaginated, getTotalVisiblePostsByUserId } from '../../src/features/posts/repositories/getPosts.repository';
+import { QueryResult } from 'pg';
+
+const mockClient = require('../../src/config/database');
 
 jest.mock('../../src/config/database', () => ({
   query: jest.fn(),
-  connect: jest.fn(),
-  end: jest.fn()
 }));
 
-const mockedClient = client as jest.Mocked<typeof client>;
-
-describe('user.posts.repository', () => {
-  afterEach(() => {
+describe('User Posts Repository', () => {
+  beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('getVisiblePostsByEmailPaginated', () => {
-    it('should return posts when user and posts exist', async () => {
-      const mockUserResult = { rows: [{ uuid: 'user-uuid' }] };
-      const mockPostResult = {
-        rows: [
-          {
-            text: 'Test post',
-            file_url: 'https://example.com/file.jpg',
-            file_type: '.jpg',
-            file_size: 102400,
-            created_at: new Date('2025-05-01T12:00:00Z'),
-          },
-        ],
-      };
+  describe('getVisiblePostsByUserIdPaginated', () => {
+    it('should return posts for a valid user ID', async () => {
+      const mockPosts = [
+        {
+          id: '1',
+          content: 'Test post',
+          file_url: 'https://example.com/file.jpg',
+          media_type: 1,
+          created_at: '2025-05-01T12:00:00.000Z',
+        },
+      ];
 
-      mockedClient.query
-        .mockResolvedValueOnce(mockUserResult) // Mock user query
-        .mockResolvedValueOnce(mockPostResult); // Mock post query
+      mockClient.query.mockResolvedValueOnce({
+        rows: mockPosts,
+        rowCount: 1,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
 
-      const result = await getVisiblePostsByEmailPaginated('test@example.com', 0, 10);
+      const result = await getVisiblePostsByUserIdPaginated('user-uuid', 0, 10);
 
-      expect(result).toEqual(mockPostResult.rows);
-      expect(mockedClient.query).toHaveBeenCalledTimes(2);
-      expect(mockedClient.query).toHaveBeenCalledWith('SELECT uuid FROM users WHERE email = $1', ['test@example.com']);
-      expect(mockedClient.query).toHaveBeenCalledWith(
-        `
-    SELECT text, file_url, file_type, file_size, created_at FROM post 
-    WHERE uuid = $1 AND state = 'visible' 
-    ORDER BY created_at DESC 
-    LIMIT $2 OFFSET $3
-  `,
+      expect(result).toEqual(mockPosts);
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT id, content, file_url, media_type, created_at FROM posts'),
         ['user-uuid', 10, 0]
       );
     });
 
-    it('should return null when user does not exist', async () => {
-      mockedClient.query.mockResolvedValueOnce({ rows: [] }); // Mock user query
+    it('should return an empty array when no posts are found', async () => {
+      mockClient.query.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
 
-      const result = await getVisiblePostsByEmailPaginated('nonexistent@example.com', 0, 10);
+      const result = await getVisiblePostsByUserIdPaginated('nonexistent-user-id', 0, 10);
 
-      expect(result).toBeNull();
-      expect(mockedClient.query).toHaveBeenCalledTimes(1);
-      expect(mockedClient.query).toHaveBeenCalledWith('SELECT uuid FROM users WHERE email = $1', ['nonexistent@example.com']);
+      expect(result).toEqual([]);
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT id, content, file_url, media_type, created_at FROM posts'),
+        ['nonexistent-user-id', 10, 0]
+      );
     });
   });
 
-  describe('getTotalVisiblePostsByEmail', () => {
-    it('should return the total count of visible posts for a user', async () => {
-      const mockUserResult = { rows: [{ uuid: 'user-uuid' }] };
-      const mockCountResult = { rows: [{ count: '5' }] };
+  describe('getTotalVisiblePostsByUserId', () => {
+    it('should return the total count of visible posts for a valid user ID', async () => {
+      mockClient.query.mockResolvedValueOnce({
+        rows: [{ count: '5' }],
+        rowCount: 1,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
 
-      mockedClient.query
-        .mockResolvedValueOnce(mockUserResult) // Mock user query
-        .mockResolvedValueOnce(mockCountResult); // Mock count query
-
-      const result = await getTotalVisiblePostsByEmail('test@example.com');
+      const result = await getTotalVisiblePostsByUserId('user-uuid');
 
       expect(result).toBe(5);
-      expect(mockedClient.query).toHaveBeenCalledTimes(2);
-      expect(mockedClient.query).toHaveBeenCalledWith('SELECT uuid FROM users WHERE email = $1', ['test@example.com']);
-      expect(mockedClient.query).toHaveBeenCalledWith('SELECT COUNT(*) FROM post WHERE uuid = $1 AND state = $2', ['user-uuid', 'visible']);
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT COUNT(*) FROM posts WHERE user_id = $1 AND status = $2'),
+        ['user-uuid', 1]
+      );
     });
 
-    it('should return 0 when user does not exist', async () => {
-      mockedClient.query.mockResolvedValueOnce({ rows: [] }); // Mock user query
+    it('should return 0 when no posts are found for the user', async () => {
+      mockClient.query.mockResolvedValueOnce({
+        rows: [{ count: '0' }],
+        rowCount: 1,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
 
-      const result = await getTotalVisiblePostsByEmail('nonexistent@example.com');
+      const result = await getTotalVisiblePostsByUserId('nonexistent-user-id');
 
       expect(result).toBe(0);
-      expect(mockedClient.query).toHaveBeenCalledTimes(1);
-      expect(mockedClient.query).toHaveBeenCalledWith('SELECT uuid FROM users WHERE email = $1', ['nonexistent@example.com']);
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT COUNT(*) FROM posts WHERE user_id = $1 AND status = $2'),
+        ['nonexistent-user-id', 1]
+      );
     });
   });
 });
