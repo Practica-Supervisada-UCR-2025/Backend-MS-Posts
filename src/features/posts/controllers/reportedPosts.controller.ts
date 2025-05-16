@@ -2,7 +2,7 @@ import { NextFunction, Response } from 'express';
 import { getReportedPosts } from '../services/reportedPosts.service';
 import * as yup from 'yup';
 import { AuthenticatedRequest } from '../../../features/middleware/authenticate.middleware';
-import { BadRequestError } from '../../../utils/errors/api-error';
+import {BadRequestError, UnauthorizedError} from '../../../utils/errors/api-error';
 import { getReportedPostsSchema, GetReportedPostsDto } from '../dto/getReportedPosts.dto';
 
 /**
@@ -21,12 +21,17 @@ import { getReportedPostsSchema, GetReportedPostsDto } from '../dto/getReportedP
  * @throws 400 if validation fails
  * @throws any other error is forwarded to the error-handling middleware
  */
-export const getUReportedPostsController = async (
+export const getReportedPostsController = async (
     req: AuthenticatedRequest,
     res: Response,
     next: NextFunction
 ) => {
   try {
+
+    if (req.user.role !== 'user') {
+      throw new UnauthorizedError('User not authenticated');
+    }
+
     const validatedQuery = (await getReportedPostsSchema.validate(req.query, {
       abortEarly: false,
       stripUnknown: true,
@@ -35,6 +40,7 @@ export const getUReportedPostsController = async (
     const { page, limit } = validatedQuery;
 
     const { message, posts, metadata } = await getReportedPosts(page, limit);
+
 
     return res.status(200).json({
       message,
