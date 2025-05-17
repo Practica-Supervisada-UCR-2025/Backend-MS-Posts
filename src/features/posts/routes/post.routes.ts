@@ -3,6 +3,7 @@ import { authenticateJWT } from '../../middleware/authenticate.middleware';
 import { getUserPostsController } from '../controllers/getPosts.controller';
 import { deleteOwnPostController } from '../controllers/post.controller';
 import { getReportedPostsController } from "../controllers/reportedPosts.controller";
+import { createPostController } from '../controllers/postCrud.controller';
 
 const router = Router();
 
@@ -14,5 +15,8 @@ router.delete('/user/posts/delete', authenticateJWT, deleteOwnPostController as 
 
 // Get all reported posts route (protected by JWT)
 router.get('/posts/reported', authenticateJWT, getReportedPostsController as RequestHandler);
+
+// Create a new post (protected by JWT)
+router.post('/newPost', authenticateJWT, createPostController as RequestHandler);
 
 export default router;
