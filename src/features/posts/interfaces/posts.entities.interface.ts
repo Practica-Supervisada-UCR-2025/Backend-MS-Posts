@@ -20,4 +20,5 @@ export interface PaginatedResponse<T> {
         currentPage: number;
     };
 }
+
 export interface Post extends BasePost {}
