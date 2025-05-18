@@ -29,7 +29,7 @@ jest.mock('../../src/features/middleware/authenticate.middleware', () => {
     };
 });
 
-describe('GET /posts/reported → getReportedPostsController', () => {
+describe('GET /posts/reported → reportedPostsController', () => {
     let app: express.Application;
 
     beforeAll(() => {
