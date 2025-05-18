@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(postsRoutes);
 
 jest.mock('../../src/features/middleware/authenticate.middleware');
-jest.mock('../../src/features/posts/controllers/getReportedPosts.controller');
+jest.mock('../../src/features/posts/controllers/reportedPosts.controller');
 
 describe('GET /posts/reported', () => {
     const mockedAuthenticateJWT = jest.mocked(authenticateJWT);
