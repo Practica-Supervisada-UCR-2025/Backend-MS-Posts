@@ -1,4 +1,4 @@
-import { getReportedPosts } from '../../src/features/posts/services/ReportedPosts.service';
+import { getReportedPosts } from '../../src/features/posts/services/reportedPosts.service';
 import * as reportedRepo from '../../src/features/posts/repositories/reported.posts.repository';
 import { BadRequestError, InternalServerError } from '../../src/utils/errors/api-error';
 import { ReportedPost } from '../../src/features/posts/interfaces/reportedPost.entities.interface';
