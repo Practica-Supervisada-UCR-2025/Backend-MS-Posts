@@ -3,27 +3,31 @@ import * as yup from 'yup';
 export const createPostSchema = yup.object({
   content: yup
     .string()
-    .nullable()
+    .required('content is required')
     .min(1, 'Content must be at least 1 character long')
     .max(300, 'Content must not exceed 300 characters'),
 
-  imageFile: yup
-    .mixed()
-    .nullable()
-    .test('is-file', 'Image file must be provided', (value) => {
-      // Validar que sea un archivo si está presente
-      return value == null || value instanceof Buffer;
-    }),
+  mediaType: yup
+    .number()
+    .transform((value, originalValue) => originalValue === "" ? null : value)
+    .nullable(),
 
-  gifFile: yup
+  file: yup
     .mixed()
-    .nullable()
-    .test('is-file', 'GIF file must be provided', (value) => {
-      // Validar que sea un archivo si está presente
-      return value == null || value instanceof Buffer;
-    }),
-}).test('at-least-one', 'At least one of "content", "imageFile", or "gifFile" must be provided', (value) => {
-  return value.content != null || value.imageFile != null || value.gifFile != null;
-});
+    .nullable(),
+
+  gifUrl: yup
+    .string()
+    .nullable(),
+}).test(
+  'file-or-urlFile',
+  'If mediaType is 2, urlFile is required and file must be empty. If mediaType is not 2, file is required.',
+  (value) => {
+    if (value.mediaType === 2) {
+      return !!value.gifUrl && !value.file;
+    }
+    return !value.gifUrl;
+  }
+);
 
 export type CreatePostsDTO = yup.InferType<typeof createPostSchema>;

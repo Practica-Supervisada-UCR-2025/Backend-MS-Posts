@@ -1,12 +1,11 @@
-// src/middlewares/authenticate.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../users/services/jwt.service';
 import { UnauthorizedError } from '../../utils/errors/api-error';
 
 export interface AuthenticatedRequest extends Request {
   user: {
-    role: string;
     email: string;
+    role: string;
     uuid: string;
   };
 }
@@ -25,23 +24,25 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
 
     const token = authHeader.split('Bearer ')[1];
 
-    // verify jwt
     const jwtService = new JwtService();
     const decoded = jwtService.verifyToken(token);
 
     // Validate and set role to either 'user' or 'admin'
     const validRole = decoded.role === 'admin' ? 'admin' : 'user';
+    const email = decoded.email;
 
-    if (!decoded.email || !decoded.uuid) {
-      throw new UnauthorizedError('Invalid token');
+    if (!email) {
+      throw new UnauthorizedError('Unauthorized', ['Not registered user']);
     }
     
     // Convertimos el req a AuthenticatedRequest al inyectar la propiedad user
     (req as AuthenticatedRequest).user = {
-      role: validRole,
       email: decoded.email,
-      uuid: decoded.uuid,
+      role: decoded.role,
+      uuid: decoded.uuid
     };
+    
+    (req as any).token = token;
 
     next();
   } catch (error) {
