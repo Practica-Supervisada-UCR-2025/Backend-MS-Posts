@@ -85,4 +85,32 @@ describe('getReportedPostsSchema', () => {
       'Only page, limit, orderBy, orderDirection, and username are allowed'
     );
   });
+
+  it('should handle string transformations for page and limit', async () => {
+    const input = { page: '3', limit: '15' };
+
+    const result = await getReportedPostsSchema.validate(input);
+
+    expect(result).toEqual({
+      page: 3,
+      limit: 15,
+      orderBy: 'date',
+      orderDirection: 'DESC',
+      username: undefined,
+    });
+  });
+
+  it('should handle optional username field', async () => {
+    const input = { username: 'validUser' };
+
+    const result = await getReportedPostsSchema.validate(input);
+
+    expect(result).toEqual({
+      page: 1,
+      limit: 10,
+      orderBy: 'date',
+      orderDirection: 'DESC',
+      username: 'validUser',
+    });
+  });
 });
