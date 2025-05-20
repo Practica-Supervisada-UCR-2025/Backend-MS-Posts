@@ -1,62 +1,64 @@
+import axios from 'axios';
 import FormData from 'form-data';
-import { findByEmailUser } from '../repositories/post.crud.repository';
+import { findByEmailUser, createPostDB } from '../repositories/post.crud.repository';
+import { Post } from '../interfaces/posts.entities.interface';
+import { v4 as uuidv4 } from 'uuid';
 
 export const createPost = async (email: string, tokenAuth: string, post: any, file?: Express.Multer.File | null) => {
-  let fileUrl: string | null = null;
+  let fileUrl: string | undefined = undefined;
   let fileSize: number | undefined = undefined;
-  let mediaType: number | undefined = undefined;
 
-  if (file) {
+  if (post.mediaType === 2) {
+    fileUrl = post.gifUrl;
+    fileSize = undefined;
+  } else if (file) {
     fileUrl = await uploadFileToMicroservice(file, tokenAuth);
     fileSize = file.size;
-    mediaType = file.mimetype === 'image/gif' ? 2 : 1;
   }
 
-  const user_id = findByEmailUser(email);
+  const user = await findByEmailUser(email);
+  if (!user) {
+    throw new Error('User not found');
+  }
 
-  const newPost = {
-    user_id: user_id,
+  const newPostData: Partial<Post> = {
+    id: uuidv4(),
     content: post.content,
-    file_url: fileUrl ?? null,
+    user_id: user.id,
+    file_url: fileUrl,
     file_size: fileSize,
-    media_type: mediaType,
+    media_type: post.mediaType,
+    is_active: true,
+    is_edited: false,
+    status: 0,
   };
+
+  const createdPost = await createPostDB(newPostData);
 
   return {
     message: 'Post created successfully',
-    post: newPost,
+    post: createdPost,
   };
 };
 
-export const uploadFileToMicroservice = async (file: Express.Multer.File, tokenAuth?: string
-): Promise<string> => {
+export const uploadFileToMicroservice = async (file: Express.Multer.File, tokenAuth: string): Promise<string> => {
   const formData = new FormData();
   formData.append('file', file.buffer, {
     filename: file.originalname,
     contentType: file.mimetype,
   });
 
-  if (file.fieldname === 'gifFile') {
-    formData.append('mediaType', 2);
-  } else {
-    formData.append('mediaType', 1);
-  }
+  formData.append('mediaType', file.fieldname === 'gifFile' ? 2 : 1);
 
-  const headers = formData.getHeaders ? formData.getHeaders() : {};
-  if (tokenAuth) {
-    headers['Authorization'] = `Bearer ${tokenAuth}`;
-  }
+  const headers = formData.getHeaders();
+  headers['Authorization'] = `Bearer ${tokenAuth}`;
 
-  const response = await fetch('http://localhost:3006/api/files/upload', {
-    method: 'POST',
-    body: formData as any,
-    headers,
-  });
 
-  if (!response.ok) {
+  const response = await axios.post('http://157.230.224.13:3006/api/files/upload', formData, { headers });
+
+  if (response.status !== 200) {
     throw new Error('Error uploading file to microservice');
   }
 
-  const data = await response.json() as { url: string };
-  return data.url;
+  return response.data.fileUrl;
 };

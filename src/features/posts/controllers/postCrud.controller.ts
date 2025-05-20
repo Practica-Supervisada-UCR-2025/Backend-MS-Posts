@@ -20,7 +20,7 @@ const upload = multer({
       cb(new Error('Solo se permiten archivos de imagen o GIF'));
     }
   }
-}).any(); // Permite cualquier campo de archivo
+}).any();
 
 export const createPostController = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
@@ -36,18 +36,23 @@ export const createPostController = async (req: AuthenticatedRequest, res: Respo
       });
     });
 
-    const files = req.files as Express.Multer.File[];
-    if (!files || files.length !== 1) {
-      throw new BadRequestError('Debes enviar exactamente un archivo (imagefile o giffile)');
-    }
+    const files = req.files as Express.Multer.File[] | undefined;
+    const file = files && files.length > 0 ? files[0] : undefined;
 
-    const file = files[0];
+    console.log('Body:', req.body);
 
-    // Validate and cast the request body to PostDTO
     const validatedBody = await createPostSchema.validate(req.body, {
       abortEarly: false,
       stripUnknown: true,
     }) as CreatePostsDTO;
+
+    if ((validatedBody.mediaType === 0 || validatedBody.mediaType === 1) && !file) {
+      throw new BadRequestError('You must send exactly one file if mediatype is 0 or 1');
+    }
+
+    if (validatedBody.mediaType === 2 && file) {
+      throw new BadRequestError('You must not send a file when mediaType is 2');
+    }
 
     const token = (req as any).token;
     const email = req.user.email;
