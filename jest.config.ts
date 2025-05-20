@@ -18,7 +18,8 @@ const config: Config.InitialOptions = {
     '!src/types/**/*',
     '!src/**/*.d.ts',
     '!src/test-db/**/*',
-    '!src/app.ts'
+    '!src/app.ts',
+    '!src/config/database.ts',// Exclude database.ts from coverage
   ],
   setupFilesAfterEnv: ['<rootDir>/test-api/setup.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],

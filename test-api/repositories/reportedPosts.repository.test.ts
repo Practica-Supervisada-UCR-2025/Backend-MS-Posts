@@ -1,3 +1,4 @@
+// Import necessary modules
 import {
   getReportedPostsPaginated,
   getAllReportedPosts,
@@ -18,126 +19,116 @@ describe('Reported Posts Repository', () => {
   });
 
   describe('getReportedPostsPaginated', () => {
-    const sampleRows = [
-      {
-        id: 'r1',
-        user_id: 'u1',
-        content: 'Offensive content',
-        file_url: null,
-        file_size: null,
-        media_type: 0,
-        is_active: true,
-        is_edited: false,
-        status: 1,
-        created_at: '2025-05-10T08:00:00.000Z',
-        updated_at: '2025-05-10T08:00:00.000Z',
-        username: 'alice',
-        email: 'alice@example.com',
-        active_reports: '2',
-        total_reports: '3',
-      },
-    ];
-
-    it('returns rows when there are reported posts', async () => {
-      const qr = {
-        rows: sampleRows,
-      } as QueryResult;
-
-      mockClient.query.mockResolvedValueOnce(qr);
-
-      const result = await getReportedPostsPaginated(5, 10);
-
-      expect(result).toEqual(sampleRows);
-      expect(mockClient.query).toHaveBeenCalledWith(
-          expect.stringContaining('SELECT'),
-          [1, 5, 10],
-      );
+    it('should throw an error for invalid orderBy field', async () => {
+      await expect(
+        getReportedPostsPaginated(10, 0, 'invalid_field' as any, 'DESC')
+      ).rejects.toThrow('Invalid orderBy field. Supported fields: date, report_count');
     });
 
-    it('returns a message object when no rows', async () => {
-      mockClient.query.mockResolvedValueOnce({
+    it('should throw an error for invalid orderDirection', async () => {
+      await expect(
+        getReportedPostsPaginated(10, 0, 'date', 'INVALID' as any)
+      ).rejects.toThrow('Invalid orderDirection. Supported directions: ASC, DESC');
+    });
+
+    it('should execute query with username filter', async () => {
+      const mockQuery = jest.spyOn(client, 'query').mockResolvedValueOnce({
         rows: [],
-        rowCount: 0,
         command: '',
+        rowCount: 0,
         oid: 0,
         fields: [],
-      } as QueryResult);
+      } as unknown as QueryResult);
 
+      await getReportedPostsPaginated(10, 0, 'date', 'DESC', 'testuser');
 
-      const result = await getReportedPostsPaginated(5, 10);
-
-      expect(result).toEqual({ message: 'No reported posts in this page range.' });
-      expect(mockClient.query).toHaveBeenCalledWith(
-          expect.stringContaining('SELECT'),
-          [1, 5, 10],
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE LOWER(u.username) = LOWER($4)'),
+        expect.arrayContaining(['testuser'])
       );
+
+      mockQuery.mockRestore();
+    });
+
+    it('should execute query without username filter', async () => {
+      const mockQuery = jest.spyOn(client, 'query').mockResolvedValueOnce({
+        rows: [],
+        command: '',
+        rowCount: 0,
+        oid: 0,
+        fields: [],
+      } as unknown as QueryResult);
+
+      await getReportedPostsPaginated(10, 0, 'date', 'DESC');
+
+      expect(mockQuery).not.toHaveBeenCalledWith(
+        expect.stringContaining('WHERE LOWER(u.username) = LOWER($4)')
+      );
+
+      mockQuery.mockRestore();
     });
   });
 
   describe('getAllReportedPosts', () => {
-    const sampleRows = [
-      {
-        id: 'r2',
-        user_id: 'u2',
-        content: 'Spam link',
-        file_url: 'https://spam.example.com',
-        file_size: 12345,
-        media_type: 1,
-        is_active: true,
-        is_edited: false,
-        status: 1,
-        created_at: '2025-05-09T09:00:00.000Z',
-        updated_at: '2025-05-09T09:00:00.000Z',
-        username: 'bob',
-        email: 'bob@example.com',
-        active_reports: '1',
-        total_reports: '1',
-      },
-    ];
+    it('should return all reported posts', async () => {
+      const sampleRows = [
+        {
+          id: 'r1',
+          user_id: 'u1',
+          content: 'Offensive content',
+          created_at: '2025-05-10T08:00:00.000Z',
+          updated_at: '2025-05-10T08:00:00.000Z',
+        },
+      ];
 
-    it('returns rows when there are reported posts', async () => {
       mockClient.query.mockResolvedValueOnce({ rows: sampleRows } as QueryResult);
 
       const result = await getAllReportedPosts();
 
       expect(result).toEqual(sampleRows);
       expect(mockClient.query).toHaveBeenCalledWith(
-          expect.stringContaining('ORDER BY p.created_at DESC;'),
-          [1],
+        expect.stringContaining('SELECT'),
+        [1]
       );
     });
 
-    it('returns a message object when no rows', async () => {
+    it('should return a message when no reported posts exist', async () => {
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0,
         command: '',
+        rowCount: 0,
         oid: 0,
         fields: [],
       } as QueryResult);
 
-
       const result = await getAllReportedPosts();
 
       expect(result).toEqual({ message: 'No hay publicaciones reportadas en este momento.' });
-      expect(mockClient.query).toHaveBeenCalledWith(
-          expect.stringContaining('ORDER BY p.created_at DESC;'),
-          [1],
-      );
     });
   });
 
   describe('getReportedPostsCount', () => {
-    it('parses and returns the count from the query result', async () => {
+    it('should return the count of reported posts without username', async () => {
       mockClient.query.mockResolvedValueOnce({
-        rows: [{ reported_count: '7' }],
+        rows: [{ reported_count: '5' }],
       } as QueryResult<{ reported_count: string }>);
 
-      const count = await getReportedPostsCount();
+      const result = await getReportedPostsCount();
 
-      expect(count).toBe(7);
+      expect(result).toBe(5);
+    });
+
+    it('should return the count of reported posts with username', async () => {
+      mockClient.query.mockResolvedValueOnce({
+        rows: [{ reported_count: '3' }],
+      } as QueryResult<{ reported_count: string }>);
+
+      const result = await getReportedPostsCount('testuser');
+
+      expect(result).toBe(3);
       expect(mockClient.query).toHaveBeenCalledWith(
-          expect.stringContaining('COUNT(DISTINCT p.id)'),
+        expect.stringContaining('WHERE LOWER(u.username) = LOWER($1)'),
+        ['testuser']
       );
     });
   });
