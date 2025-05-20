@@ -1,5 +1,4 @@
 import FormData from 'form-data';
-import fetch from 'node-fetch';
 import { findByEmailUser } from '../repositories/post.crud.repository';
 
 export const createPost = async (email: string, tokenAuth: string, post: any, file?: Express.Multer.File | null) => {
