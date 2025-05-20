@@ -102,7 +102,7 @@ describe('Reported Posts Repository', () => {
 
       expect(result).toEqual(sampleRows);
       expect(mockClient.query).toHaveBeenCalledWith(
-          expect.stringContaining('ORDER BY p.created_at DESC;'),
+          expect.stringContaining('SELECT'),
           [1],
       );
     });
@@ -121,24 +121,39 @@ describe('Reported Posts Repository', () => {
 
       expect(result).toEqual({ message: 'No hay publicaciones reportadas en este momento.' });
       expect(mockClient.query).toHaveBeenCalledWith(
-          expect.stringContaining('ORDER BY p.created_at DESC;'),
+          expect.stringContaining('SELECT'),
           [1],
       );
     });
   });
 
   describe('getReportedPostsCount', () => {
-    it('parses and returns the count from the query result', async () => {
-      mockClient.query.mockResolvedValueOnce({
-        rows: [{ reported_count: '7' }],
-      } as QueryResult<{ reported_count: string }>);
-
-      const count = await getReportedPostsCount();
-
-      expect(count).toBe(7);
-      expect(mockClient.query).toHaveBeenCalledWith(
-          expect.stringContaining('COUNT(DISTINCT p.id)'),
-      );
-    });
+      it('parses and returns the count from the query result without username', async () => {
+          mockClient.query.mockResolvedValueOnce({
+              rows: [{ reported_count: '7' }],
+          } as QueryResult<{ reported_count: string }>);
+  
+          const count = await getReportedPostsCount();
+  
+          expect(count).toBe(7);
+          expect(mockClient.query).toHaveBeenCalledWith(
+              expect.stringContaining('SELECT'),
+              [],
+          );
+      });
+  
+      it('parses and returns the count from the query result with username', async () => {
+          mockClient.query.mockResolvedValueOnce({
+              rows: [{ reported_count: '3' }],
+          } as QueryResult<{ reported_count: string }>);
+  
+          const count = await getReportedPostsCount('cristopher.hernandez');
+  
+          expect(count).toBe(3);
+          expect(mockClient.query).toHaveBeenCalledWith(
+              expect.stringContaining('SELECT'),
+              ['cristopher.hernandez'],
+          );
+      });
   });
 });

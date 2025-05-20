@@ -20,6 +20,14 @@ describe('getReportedPosts service', () => {
     const samplePosts: ReportedPost[] = [
       {
         id: 'r1',
+        content: 'Offensive content',
+        file_url: null,
+        media_type: null,
+        created_at: new Date('2025-05-10T08:00:00.000Z'),
+        username: 'alice',
+        email: 'alice@example.com',
+        activeReports: 2,
+        totalReports: 3,
         // from BasePost
         content: 'Offensive content',
         file_url: undefined,
@@ -33,15 +41,18 @@ describe('getReportedPosts service', () => {
     ];
     mockedPaginated.mockResolvedValueOnce(samplePosts);
 
+    // Arrange
     const page = 2;
     const limit = 2;
-
+    const orderBy = 'date';          // Default or your choice ('date', 'report_count', 'username')
+    const orderDirection = 'DESC';   // Default or your choice ('ASC', 'DESC')
+    const user = 'cristopher.hernandez'
     // Act
-    const result = await getReportedPosts(page, limit);
+    const result = await getReportedPosts(page, limit, orderBy, orderDirection,user);
 
     // Assert
     expect(mockedCount).toHaveBeenCalledTimes(1);
-    expect(mockedPaginated).toHaveBeenCalledWith(limit, (page - 1) * limit);
+    expect(mockedPaginated).toHaveBeenCalledWith(limit, (page - 1) * limit,orderBy, orderDirection,user);
     expect(result).toEqual({
       message: 'Reported posts fetched successfully',
       posts: samplePosts,
@@ -57,31 +68,35 @@ describe('getReportedPosts service', () => {
     // Arrange
     mockedCount.mockResolvedValueOnce(0);
     mockedPaginated.mockResolvedValueOnce({ message: 'No reported posts in this page range.' });
-
+    const page = 2;
+    const limit = 2;
+    const orderBy = 'date';          // Default or your choice ('date', 'report_count', 'username')
+    const orderDirection = 'DESC';   // Default or your choice ('ASC', 'DESC')
+     const user = 'cristopher.hernandez'
     // Act
-    const result = await getReportedPosts(1, 10);
+    const result = await getReportedPosts(page, limit,orderBy, orderDirection,user);
 
     // Assert
-    expect(mockedCount).toHaveBeenCalledWith();
-    expect(mockedPaginated).toHaveBeenCalledWith(10, 0);
+    expect(mockedCount).toHaveBeenCalledWith(user);
+    expect(mockedPaginated).toHaveBeenCalledWith(page, limit,orderBy,orderDirection,user);
     expect(result).toEqual({
       message: 'Reported posts fetched successfully',
       posts: [],   // no rows → empty array
       metadata: {
         totalPosts: 0,
         totalPages: 0,
-        currentPage: 1,
+        currentPage: 2,
       },
     });
   });
 
   it('throws BadRequestError when page or limit is less than 1', async () => {
-    await expect(getReportedPosts(0, 5)).rejects.toThrow(BadRequestError);
-    await expect(getReportedPosts(1, 0)).rejects.toThrow(BadRequestError);
+    await expect(getReportedPosts(0, 5, 'date', 'DESC', 'user')).rejects.toThrow(BadRequestError);
+    await expect(getReportedPosts(1, 0, 'date', 'DESC', 'user')).rejects.toThrow(BadRequestError);
   });
 
   it('wraps repository errors in InternalServerError', async () => {
     mockedCount.mockRejectedValueOnce(new Error('DB down'));
-    await expect(getReportedPosts(1, 10)).rejects.toThrow(InternalServerError);
+    await expect(getReportedPosts(1, 10, 'date', 'DESC', 'user')).rejects.toThrow(InternalServerError);
   });
 });

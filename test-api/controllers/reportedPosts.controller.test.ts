@@ -72,7 +72,7 @@ describe('GET /posts/reported → reportedPostsController', () => {
             .expect(200);
 
         expect(res.body).toEqual(mockResult);
-        expect(reportedPostsService.getReportedPosts).toHaveBeenCalledWith(1, 10);
+        expect(reportedPostsService.getReportedPosts).toHaveBeenCalledWith(1, 10, "date", "DESC", undefined);
     });
 
     it('returns 401 when no Authorization header', async () => {
