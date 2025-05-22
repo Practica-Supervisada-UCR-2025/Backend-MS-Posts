@@ -74,44 +74,40 @@ export const deleteReportedPostController = async (
   next: NextFunction
 ) => {
     try {
-        const validatedData = await deleteReportedPostSchema.validate(req.body, {
-          abortEarly: false,
-          stripUnknown: true
-        }) as DeleteReportedPostDto;
-
-        // Validate the role
-        const role = req.user.role;
-        if (role != 'admin'){
+        // Validate the role first
+        if (req.user.role !== 'admin') {
             return res.status(403).json({
                 success: false,
                 message: 'Access denied: You do not have permission to perform this action'
             });
         }
 
+        // Then validate the request body
+        const validatedData = await deleteReportedPostSchema.validate(req.body, {
+            abortEarly: false,
+            stripUnknown: true
+        }) as DeleteReportedPostDto;
+
         const result = await deleteReportedPost(validatedData);
 
         if (result.success) {
-            res.status(200).json({
+            return res.status(200).json({
                 success: true,
                 message: result.message,
             });
         } else {
-            res.status(400).json({
+            return res.status(400).json({
                 success: false,
                 message: result.message
             });
         }
     } catch (error) {
-        if (error instanceof Error) {
-            res.status(400).json({
-                success: false,
-                message: error.message
-            });
-        } else {
-            res.status(500).json({
-                success: false,
-                message: 'An unexpected error occurred'
+        if (error instanceof yup.ValidationError) {
+            return res.status(400).json({
+                message: 'Validation error',
+                details: error.errors
             });
         }
+        return next(error);
     }
 };

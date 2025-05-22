@@ -3,10 +3,9 @@ import express, { ErrorRequestHandler } from 'express';
 import postsRoutes from '../../src/features/posts/routes/post.routes';
 import { errorHandler } from '../../src/utils/errors/error-handler.middleware';
 import * as reportedPostsService from '../../src/features/posts/services/reportedPosts.service';
-
+import reportedPostsRoutes from '../../src/features/posts/routes/reportedPosts.routes';
 
 jest.mock('../../src/features/posts/services/reportedPosts.service');
-
 
 jest.mock('../../src/features/middleware/authenticate.middleware', () => {
     const { UnauthorizedError } = require('../../src/utils/errors/api-error');
@@ -14,13 +13,23 @@ jest.mock('../../src/features/middleware/authenticate.middleware', () => {
         authenticateJWT: (req: any, res: any, next: any) => {
             const auth = req.headers.authorization as string;
             if (auth?.startsWith('Bearer valid-token')) {
-                // Good token + correct role
-                req.user = { uuid: 'user-uuid', email: 'a@b.com', role: 'user' };
+                // For admin routes, set admin role
+                if (req.path.startsWith('/admin')) {
+                    req.user = { uuid: 'admin-uuid', email: 'admin@test.com', role: 'admin' };
+                } else {
+                    // For other routes, set user role
+                    req.user = { uuid: 'user-uuid', email: 'a@b.com', role: 'user' };
+                }
                 return next();
             }
             if (auth?.startsWith('Bearer wrong-role')) {
-                // Simulate authenticated but wrong role
-                req.user = { uuid: 'user-uuid', email: 'a@b.com', role: 'admin' };
+                // For admin routes, set user role (wrong)
+                if (req.path.startsWith('/admin')) {
+                    req.user = { uuid: 'user-uuid', email: 'a@b.com', role: 'user' };
+                } else {
+                    // For other routes, set admin role (wrong)
+                    req.user = { uuid: 'admin-uuid', email: 'admin@test.com', role: 'admin' };
+                }
                 return next();
             }
             // No header or bad token
@@ -113,7 +122,7 @@ describe('POST /admin/reported/delete → deleteReportedPostController', () => {
     beforeAll(() => {
         app = express();
         app.use(express.json());
-        app.use('/', postsRoutes);
+        app.use('/', reportedPostsRoutes);
         app.use(errorHandler as ErrorRequestHandler);
     });
 
@@ -126,23 +135,29 @@ describe('POST /admin/reported/delete → deleteReportedPostController', () => {
         message: 'Post and its reports have been successfully deactivated'
     };
 
+    const validRequestData = {
+        postId: '123',
+        authorUsername: 'author123',
+        moderatorUsername: 'moderator123'
+    };
+
     it('returns 200 + success message when admin deletes post', async () => {
         (reportedPostsService.deleteReportedPost as jest.Mock).mockResolvedValueOnce(mockDeleteResult);
 
         const res = await request(app)
             .post('/admin/reported/delete')
             .set('Authorization', 'Bearer valid-token')
-            .send({ postId: '123' })
+            .send(validRequestData)
             .expect(200);
 
         expect(res.body).toEqual(mockDeleteResult);
-        expect(reportedPostsService.deleteReportedPost).toHaveBeenCalledWith({ postId: '123' });
+        expect(reportedPostsService.deleteReportedPost).toHaveBeenCalledWith(validRequestData);
     });
 
     it('returns 401 when no Authorization header', async () => {
         const res = await request(app)
             .post('/admin/reported/delete')
-            .send({ postId: '123' })
+            .send(validRequestData)
             .expect(401);
 
         expect(res.body).toEqual({ message: 'Unauthorized' });
@@ -152,7 +167,7 @@ describe('POST /admin/reported/delete → deleteReportedPostController', () => {
         const res = await request(app)
             .post('/admin/reported/delete')
             .set('Authorization', 'Bearer wrong-role')
-            .send({ postId: '123' })
+            .send(validRequestData)
             .expect(403);
 
         expect(res.body).toEqual({
@@ -165,21 +180,29 @@ describe('POST /admin/reported/delete → deleteReportedPostController', () => {
         const res = await request(app)
             .post('/admin/reported/delete')
             .set('Authorization', 'Bearer valid-token')
-            .send({})
+            .send({
+                authorUsername: 'author123',
+                moderatorUsername: 'moderator123'
+            })
             .expect(400);
 
-        expect(res.body).toHaveProperty('success', false);
-        expect(res.body).toHaveProperty('message');
+        expect(res.body).toEqual({
+            message: 'Validation error',
+            details: ['El ID del post es requerido']
+        });
     });
 
     it('returns 400 when service throws error', async () => {
         const errorMessage = 'Failed to delete post';
-        (reportedPostsService.deleteReportedPost as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
+        (reportedPostsService.deleteReportedPost as jest.Mock).mockResolvedValueOnce({
+            success: false,
+            message: errorMessage
+        });
 
         const res = await request(app)
             .post('/admin/reported/delete')
             .set('Authorization', 'Bearer valid-token')
-            .send({ postId: '123' })
+            .send(validRequestData)
             .expect(400);
 
         expect(res.body).toEqual({

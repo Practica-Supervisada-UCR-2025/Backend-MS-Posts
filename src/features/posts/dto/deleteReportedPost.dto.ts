@@ -16,4 +16,4 @@ export const deleteReportedPostSchema = yup.object({
     moderatorUsername: yup
         .string()
         .required('El nombre del moderador es requerido')
-}); 
+}).noUnknown('Only postId, authorUsername, and moderatorUsername are allowed'); 

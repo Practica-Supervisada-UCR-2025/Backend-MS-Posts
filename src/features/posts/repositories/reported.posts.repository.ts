@@ -225,24 +225,25 @@ export const getReportedPostsCount = async (username?: string): Promise<number> 
  * @returns Object containing a message indicating the operation result
  */
 export const deleteReportedPost = async (postId: string): Promise<{message: string}> => {
-  const query = `
-    BEGIN;
-    
-    -- Update the post status
-    UPDATE posts 
-    SET is_active = 0 
-    WHERE id = $1;
-    
-    -- Update all associated reports
-    UPDATE reports
-    SET status = 0
-    WHERE reported_content_id = $1;
-    
-    COMMIT;
-  `;
-  
   try {
-    await client.query(query, [postId]);
+    // Start transaction
+    await client.query('BEGIN;');
+    
+    // Update the post status
+    await client.query(
+      'UPDATE posts SET is_active = 0 WHERE id = $1',
+      [postId]
+    );
+    
+    // Update all associated reports
+    await client.query(
+      'UPDATE reports SET status = 0 WHERE reported_content_id = $1',
+      [postId]
+    );
+    
+    // Commit transaction
+    await client.query('COMMIT;');
+    
     return { message: 'Post and its reports have been successfully deactivated' };
   } catch (error) {
     await client.query('ROLLBACK;');

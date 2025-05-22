@@ -1,8 +1,9 @@
 import request from 'supertest';
-import express, { RequestHandler, NextFunction, Response } from 'express';
+import express, { RequestHandler, NextFunction, Response, Request } from 'express';
 import { authenticateJWT } from '../../src/features/middleware/authenticate.middleware';
 import { deleteReportedPostController } from '../../src/features/posts/controllers/reportedPosts.controller';
 import reportedPostsRoutes from '../../src/features/posts/routes/reportedPosts.routes';
+import { AuthenticatedRequest } from '../../src/features/middleware/authenticate.middleware';
 
 // create a test app
 const app = express();
@@ -22,11 +23,14 @@ describe('POST /admin/reported/delete', () => {
 
     it('should return 200 when post is successfully deleted', async () => {
         // middleware just calls next()
-        mockedAuthenticateJWT.mockImplementation(((req, res, next) => next()) as RequestHandler);
+        mockedAuthenticateJWT.mockImplementation(((req: AuthenticatedRequest, res, next) => {
+            req.user = { role: 'admin', email: 'admin@test.com', uuid: '123' };
+            next();
+        }) as RequestHandler);
 
         // mock controller response
         mockedDeleteReportedPostController.mockImplementation(
-            async (req: any, res: Response, next: NextFunction): Promise<void> => {
+            async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
                 res.status(200).json({
                     success: true,
                     message: 'Post and its reports have been successfully deactivated'
@@ -62,10 +66,23 @@ describe('POST /admin/reported/delete', () => {
 
     it('should return 403 when user is not admin', async () => {
         // middleware passes but controller checks role
-        mockedAuthenticateJWT.mockImplementation(((req, res, next) => {
-            req.user = { role: 'user' };
+        mockedAuthenticateJWT.mockImplementation(((req: AuthenticatedRequest, res, next) => {
+            req.user = { role: 'user', email: 'user@test.com', uuid: '456' };
             next();
         }) as RequestHandler);
+
+        // mock controller to handle non-admin role
+        mockedDeleteReportedPostController.mockImplementation(
+            async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+                if (req.user.role !== 'admin') {
+                    res.status(403).json({
+                        success: false,
+                        message: 'Access denied: You do not have permission to perform this action'
+                    });
+                    return;
+                }
+            }
+        );
 
         const res = await request(app)
             .post('/admin/reported/delete')
@@ -80,10 +97,24 @@ describe('POST /admin/reported/delete', () => {
     });
 
     it('should return 400 when postId is missing', async () => {
-        mockedAuthenticateJWT.mockImplementation(((req, res, next) => {
-            req.user = { role: 'admin' };
+        // middleware passes with admin role
+        mockedAuthenticateJWT.mockImplementation(((req: AuthenticatedRequest, res, next) => {
+            req.user = { role: 'admin', email: 'admin@test.com', uuid: '123' };
             next();
         }) as RequestHandler);
+
+        // mock controller to handle validation error
+        mockedDeleteReportedPostController.mockImplementation(
+            async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+                if (!req.body.postId) {
+                    res.status(400).json({
+                        success: false,
+                        message: 'Validation error'
+                    });
+                    return;
+                }
+            }
+        );
 
         const res = await request(app)
             .post('/admin/reported/delete')

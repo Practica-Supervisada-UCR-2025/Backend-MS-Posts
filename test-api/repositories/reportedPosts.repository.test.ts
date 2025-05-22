@@ -136,55 +136,50 @@ describe('Reported Posts Repository', () => {
 
   describe('deleteReportedPost', () => {
     it('should successfully delete a post and its reports', async () => {
-      mockClient.query.mockResolvedValueOnce({
-        rows: [],
-        command: '',
-        rowCount: 1,
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // BEGIN
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 1, oid: 0, fields: [] } as QueryResult) // UPDATE posts
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 1, oid: 0, fields: [] } as QueryResult) // UPDATE reports
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult); // COMMIT
 
       const result = await deleteReportedPost('post123');
 
       expect(result).toEqual({
         message: 'Post and its reports have been successfully deactivated'
       });
-      expect(mockClient.query).toHaveBeenCalledWith(
-        expect.stringContaining('BEGIN'),
-        ['post123']
-      );
-      expect(mockClient.query).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE posts'),
-        ['post123']
-      );
-      expect(mockClient.query).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE reports'),
-        ['post123']
-      );
-      expect(mockClient.query).toHaveBeenCalledWith(
-        expect.stringContaining('COMMIT'),
-        ['post123']
-      );
+
+      // Verify the sequence of calls
+      const calls = mockClient.query.mock.calls;
+      expect(calls[0][0]).toBe('BEGIN;');
+      expect(calls[1][0]).toBe('UPDATE posts SET is_active = 0 WHERE id = $1');
+      expect(calls[1][1]).toEqual(['post123']);
+      expect(calls[2][0]).toBe('UPDATE reports SET status = 0 WHERE reported_content_id = $1');
+      expect(calls[2][1]).toEqual(['post123']);
+      expect(calls[3][0]).toBe('COMMIT;');
     });
 
     it('should handle database errors and rollback transaction', async () => {
       const mockError = new Error('Database error');
       mockClient.query
-        .mockResolvedValueOnce({} as QueryResult) // BEGIN
-        .mockRejectedValueOnce(mockError); // First UPDATE
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // BEGIN
+        .mockRejectedValueOnce(mockError) // First UPDATE
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult); // ROLLBACK
 
-      await expect(deleteReportedPost('post123')).rejects.toThrow('Database error');
-      expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK;');
+      try {
+        await deleteReportedPost('post123');
+        fail('Expected deleteReportedPost to throw an error');
+      } catch (error) {
+        expect(error).toBe(mockError);
+        expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK;');
+      }
     });
 
     it('should handle case where post is not found', async () => {
-      mockClient.query.mockResolvedValueOnce({
-        rows: [],
-        command: '',
-        rowCount: 0,
-        oid: 0,
-        fields: [],
-      } as QueryResult);
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // BEGIN
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // UPDATE posts
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // UPDATE reports
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult); // COMMIT
 
       const result = await deleteReportedPost('nonexistent');
 
