@@ -106,3 +106,85 @@ describe('GET /posts/reported → reportedPostsController', () => {
         });
     });
 });
+
+describe('POST /admin/reported/delete → deleteReportedPostController', () => {
+    let app: express.Application;
+
+    beforeAll(() => {
+        app = express();
+        app.use(express.json());
+        app.use('/', postsRoutes);
+        app.use(errorHandler as ErrorRequestHandler);
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    const mockDeleteResult = {
+        success: true,
+        message: 'Post and its reports have been successfully deactivated'
+    };
+
+    it('returns 200 + success message when admin deletes post', async () => {
+        (reportedPostsService.deleteReportedPost as jest.Mock).mockResolvedValueOnce(mockDeleteResult);
+
+        const res = await request(app)
+            .post('/admin/reported/delete')
+            .set('Authorization', 'Bearer valid-token')
+            .send({ postId: '123' })
+            .expect(200);
+
+        expect(res.body).toEqual(mockDeleteResult);
+        expect(reportedPostsService.deleteReportedPost).toHaveBeenCalledWith({ postId: '123' });
+    });
+
+    it('returns 401 when no Authorization header', async () => {
+        const res = await request(app)
+            .post('/admin/reported/delete')
+            .send({ postId: '123' })
+            .expect(401);
+
+        expect(res.body).toEqual({ message: 'Unauthorized' });
+    });
+
+    it('returns 403 when user is not admin', async () => {
+        const res = await request(app)
+            .post('/admin/reported/delete')
+            .set('Authorization', 'Bearer wrong-role')
+            .send({ postId: '123' })
+            .expect(403);
+
+        expect(res.body).toEqual({
+            success: false,
+            message: 'Access denied: You do not have permission to perform this action'
+        });
+    });
+
+    it('returns 400 when postId is missing', async () => {
+        const res = await request(app)
+            .post('/admin/reported/delete')
+            .set('Authorization', 'Bearer valid-token')
+            .send({})
+            .expect(400);
+
+        expect(res.body).toHaveProperty('success', false);
+        expect(res.body).toHaveProperty('message');
+    });
+
+    it('returns 400 when service throws error', async () => {
+        const errorMessage = 'Failed to delete post';
+        (reportedPostsService.deleteReportedPost as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
+
+        const res = await request(app)
+            .post('/admin/reported/delete')
+            .set('Authorization', 'Bearer valid-token')
+            .send({ postId: '123' })
+            .expect(400);
+
+        expect(res.body).toEqual({
+            success: false,
+            message: errorMessage
+        });
+    });
+});

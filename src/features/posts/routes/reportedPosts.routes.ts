@@ -1,5 +1,5 @@
 import { Router, RequestHandler } from 'express';
-import { getUserPostsController } from '../controllers/userPosts.controller';
+import { getUserPostsController } from '../controllers/getPosts.controller';
 import { deleteReportedPostController } from '../controllers/reportedPosts.controller';
 import { authenticateJWT } from '../../middleware/authenticate.middleware';
 

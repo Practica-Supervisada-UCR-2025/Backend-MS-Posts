@@ -3,6 +3,7 @@ import {
   getReportedPostsPaginated,
   getAllReportedPosts,
   getReportedPostsCount,
+  deleteReportedPost
 } from '../../src/features/posts/repositories/reported.posts.repository';
 import client from '../../src/config/database';
 import { QueryResult } from 'pg';
@@ -130,6 +131,66 @@ describe('Reported Posts Repository', () => {
         expect.stringContaining('WHERE LOWER(u.username) = LOWER($1)'),
         ['testuser']
       );
+    });
+  });
+
+  describe('deleteReportedPost', () => {
+    it('should successfully delete a post and its reports', async () => {
+      mockClient.query.mockResolvedValueOnce({
+        rows: [],
+        command: '',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      const result = await deleteReportedPost('post123');
+
+      expect(result).toEqual({
+        message: 'Post and its reports have been successfully deactivated'
+      });
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('BEGIN'),
+        ['post123']
+      );
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE posts'),
+        ['post123']
+      );
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE reports'),
+        ['post123']
+      );
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('COMMIT'),
+        ['post123']
+      );
+    });
+
+    it('should handle database errors and rollback transaction', async () => {
+      const mockError = new Error('Database error');
+      mockClient.query
+        .mockResolvedValueOnce({} as QueryResult) // BEGIN
+        .mockRejectedValueOnce(mockError); // First UPDATE
+
+      await expect(deleteReportedPost('post123')).rejects.toThrow('Database error');
+      expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK;');
+    });
+
+    it('should handle case where post is not found', async () => {
+      mockClient.query.mockResolvedValueOnce({
+        rows: [],
+        command: '',
+        rowCount: 0,
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      const result = await deleteReportedPost('nonexistent');
+
+      expect(result).toEqual({
+        message: 'Post and its reports have been successfully deactivated'
+      });
     });
   });
 });
