@@ -1,9 +1,11 @@
 import { NextFunction, Response } from 'express';
-import { getReportedPosts } from '../services/reportedPosts.service';
+import { getReportedPosts, deleteReportedPost } from '../services/reportedPosts.service';
 import * as yup from 'yup';
 import { AuthenticatedRequest } from '../../../features/middleware/authenticate.middleware';
 import { BadRequestError } from '../../../utils/errors/api-error';
 import { getReportedPostsSchema, GetReportedPostsDto } from '../dto/getReportedPosts.dto';
+import { DeleteReportedPostDto, deleteReportedPostSchema } from '../dto/deleteReportedPost.dto';
+
 
 /**
  * Controller for fetching paginated reported posts.
@@ -48,4 +50,52 @@ export const getUReportedPostsController = async (
     }
     return next(err);
   }
+};
+
+export const deleteReportedPostController = async (
+  req: AuthenticatedRequest, 
+  res: Response,
+  next: NextFunction
+) => {
+    try {
+        const validatedData = await deleteReportedPostSchema.validate(req.body, {
+          abortEarly: false,
+          stripUnknown: true
+        }) as DeleteReportedPostDto;
+
+        // Validate the role
+        const role = req.user.role;
+        if (role != 'admin'){
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied: You do not have permission to perform this action'
+            });
+        }
+
+        const result = await deleteReportedPost(validatedData);
+
+        if (result.success) {
+            res.status(200).json({
+                success: true,
+                message: result.message,
+            });
+        } else {
+            res.status(400).json({
+                success: false,
+                message: result.message
+            });
+        }
+    } catch (error) {
+        if (error instanceof Error) {
+            res.status(400).json({
+                success: false,
+                message: error.message
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: 'An unexpected error occurred'
+            });
+        }
+    }
 };

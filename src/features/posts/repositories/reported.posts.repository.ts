@@ -133,3 +133,25 @@ export const getReportedPostsCount = async (): Promise<number> => {
     return parseInt(result.rows[0].reported_count, 10);
 };
 
+/**
+ * Soft deletes a reported post by setting its is_active status to false.
+ * 
+ * @param postId - ID of the post to delete
+ * @returns Object containing a message indicating the operation result
+ */
+export const deleteReportedPost = async (postId: string): Promise<{message: string}> => {
+  const query = `
+    UPDATE posts 
+    SET is_active = false 
+    WHERE id = $1 
+    RETURNING id;
+  `;
+  
+  const result = await client.query(query, [postId]);
+  
+  if (result.rows.length === 0) {
+    return { message: 'Post not found or already deleted' };
+  }
+  
+  return { message: 'Post successfully deleted' };
+}
