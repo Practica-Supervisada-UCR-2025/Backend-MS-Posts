@@ -1,64 +1,100 @@
-import { getUserPostsController } from '../../src/features/posts/controllers/userPosts.controller';
-import { getUserPosts } from '../../src/features/posts/services/userPosts.service';
-import { Request, Response, NextFunction } from 'express';
-import { BadRequestError } from '../../src/utils/errors/api-error';
-import { AuthenticatedRequest } from '../../src/features/middleware/authenticate.middleware';
+import request from 'supertest';
+import express, { ErrorRequestHandler } from 'express';
+import { getUserPostsController } from '../../src/features/posts/controllers/getPosts.controller';
+import { errorHandler } from '../../src/utils/errors/error-handler.middleware';
+import userPostsRoutes from '../../src/features/posts/routes/post.routes';
 
+import * as userPostsService from '../../src/features/posts/services/getPosts.service';
 
-jest.mock('../../src/features/posts/services/userPosts.service');
+// Mock the service layer
+jest.mock('../../src/features/posts/services/getPosts.service');
 
-describe('getUserPostsController', () => {
-  const mockedGetUserPosts = jest.mocked(getUserPosts);
-  let req: Partial<Request>;
-  let res: Partial<Response>;
-  let next: NextFunction;
+// Mock the authenticate middleware
+jest.mock('../../src/features/middleware/authenticate.middleware', () => {
+  const { UnauthorizedError } = require('../../src/utils/errors/api-error');
+  return {
+    authenticateJWT: (req: any, res: any, next: any) => {
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer valid-token')) {
+        req.user = { email: 'angel@ucr.ac.cr', uuid: 'user-uuid', role: 'user' };
+        next();
+      } else {
+        next(new UnauthorizedError('Unauthorized'));
+      }
+    },
+  };
+});
+
+describe('UserPosts Controller Integration Tests', () => {
+  let app: express.Application;
+
+  beforeAll(() => {
+    app = express();
+    app.use(express.json());
+    app.use('/', userPostsRoutes);
+    app.use(errorHandler as ErrorRequestHandler);
+  });
 
   beforeEach(() => {
-    req = {
-      user: { email: 'test@example.com' },
-      query: { page: '1', limit: '10' },
-    };
-    res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    };
-    next = jest.fn();
     jest.clearAllMocks();
   });
 
-  it('should return posts and metadata when service succeeds', async () => {
-    const mockResponse = {
-      message: 'Posts fetched successfully',
-      posts: [],
+  describe('GET /api/user/posts/mine', () => {
+    const mockPosts = {
+      data: [
+        {
+          id: '1',
+          user_id: 'user-uuid',
+          content: 'Test post',
+          file_url: 'https://example.com/file.jpg',
+          media_type: 1,
+          created_at: '2025-05-01T12:00:00.000Z', // Updated to string format
+        },
+      ],
       metadata: {
-        totalPosts: 0,
-        totalPages: 0,
+        totalItems: 1,
+        totalPages: 1,
         currentPage: 1,
       },
     };
 
-    mockedGetUserPosts.mockResolvedValue(mockResponse);
+    it('should return posts for an authenticated user', async () => {
+      // Mock the service
+      (userPostsService.getUserPosts as jest.Mock).mockResolvedValueOnce(mockPosts);
 
-    await getUserPostsController(req as AuthenticatedRequest, res as Response, next);
+      const response = await request(app)
+        .get('/user/posts/mine')
+        .set('Authorization', 'Bearer valid-token')
+        .query({ page: 1, limit: 10 })
+        .send()
+        .expect(200);
 
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(mockResponse);
-  });
+      expect(response.body).toEqual(mockPosts);
+      expect(userPostsService.getUserPosts).toHaveBeenCalledWith('user-uuid', 1, 10);
+    });
 
-  it('should call next with BadRequestError when validation fails', async () => {
-    req.query = { page: 'invalid', limit: '10' };
+    it('should return 401 when the user is not authenticated', async () => {
+      const response = await request(app)
+        .get('/user/posts/mine')
+        .query({ page: 1, limit: 10 })
+        .expect(401);
 
-    await getUserPostsController(req as AuthenticatedRequest, res as Response, next);
+      expect(response.body).toEqual({
+        message: 'Unauthorized',
+      });
+    });
 
-    expect(next).toHaveBeenCalledWith(expect.any(BadRequestError));
-  });
+    it('should return 400 for invalid query parameters', async () => {
+      const response = await request(app)
+        .get('/user/posts/mine')
+        .set('Authorization', 'Bearer valid-token')
+        .query({ page: 'invalid', limit: 'invalid' })
+        .expect(400);
 
-  it('should call next with error when service throws', async () => {
-    const error = new Error('Service error');
-    mockedGetUserPosts.mockRejectedValue(error);
-
-    await getUserPostsController(req as AuthenticatedRequest, res as Response, next);
-
-    expect(next).toHaveBeenCalledWith(error);
+      expect(response.body).toEqual({
+        message: 'Validation error',
+        details: expect.any(Array),
+      });
+    });
   });
 });

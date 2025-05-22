@@ -9,61 +9,138 @@ const ACTIVE_REPORT_STATUS = 1;
 /**
  * Retrieves paginated reported posts.
  */
+const validFields = {
+    date: 'p.created_at',
+    report_count: 'total_reports',
+} as const;
+
+type OrderByField = keyof typeof validFields;
+
 export const getReportedPostsPaginated = async (
     limit: number,
-    offset: number
+    offset: number,
+    orderBy: OrderByField = 'date',
+    orderDirection: 'ASC' | 'DESC' = 'DESC',
+    username?: string  // Optional username filter
 ): Promise<ReportedPost[] | { message: string }> => {
-    const paginatedQuery = `
-    SELECT
-      p.id,
-      p.user_id,
-      p.content,
-      p.file_url,
-      p.file_size,
-      p.media_type,
-      p.is_active,
-      p.is_edited,
-      p.status,
-      p.created_at,
-      p.updated_at,
-      u.username,
-      u.email,
-      COALESCE(
-        SUM(CASE WHEN r.status = $1 THEN 1 ELSE 0 END),
-        0
-      ) AS active_reports,
-      COUNT(r.id) AS total_reports
-    FROM posts p
-    JOIN users u
-      ON u.id = p.user_id
-    JOIN reports r
-      ON r.reported_content_id = p.id
-    GROUP BY
-      p.id,
-      p.user_id,
-      p.content,
-      p.file_url,
-      p.file_size,
-      p.media_type,
-      p.is_active,
-      p.is_edited,
-      p.status,
-      p.created_at,
-      p.updated_at,
-      u.username,
-      u.email
-    ORDER BY p.created_at DESC
-    LIMIT $2
-    OFFSET $3;
-  `;
-    const values = [ACTIVE_REPORT_STATUS, limit, offset];
+    // Validate the orderBy and orderDirection parameters
+    if (!Object.keys(validFields).includes(orderBy)) {
+        throw new Error(`Invalid orderBy field. Supported fields: ${Object.keys(validFields).join(', ')}`);
+    }
+
+    if (!['ASC', 'DESC'].includes(orderDirection)) {
+        throw new Error(`Invalid orderDirection. Supported directions: ASC, DESC`);
+    }
+
+    let paginatedQuery = '';
+    const values: (string | number)[] = [ACTIVE_REPORT_STATUS, limit, offset];
+
+    // If username is provided, use the filtered query
+    if (username && username.length > 0) {
+        paginatedQuery = `
+        SELECT
+          p.id,
+          p.user_id,
+          p.content,
+          p.file_url,
+          p.file_size,
+          p.media_type,
+          p.is_active,
+          p.is_edited,
+          p.status,
+          p.created_at,
+          p.updated_at,
+          u.username,
+          u.email,
+          COALESCE(
+            SUM(CASE WHEN r.status = $1 THEN 1 ELSE 0 END),
+            0
+          ) AS active_reports,
+          COUNT(r.id) AS total_reports
+        FROM posts p
+        JOIN users u
+          ON u.id = p.user_id
+        JOIN reports r
+          ON r.reported_content_id = p.id
+        WHERE LOWER(u.username) = LOWER($4)
+        GROUP BY
+          p.id,
+          p.user_id,
+          p.content,
+          p.file_url,
+          p.file_size,
+          p.media_type,
+          p.is_active,
+          p.is_edited,
+          p.status,
+          p.created_at,
+          p.updated_at,
+          u.username,
+          u.email
+        ORDER BY ${validFields[orderBy]} ${orderDirection}
+        LIMIT $2 OFFSET $3;
+        `;
+        values.push(username);
+    } else {
+        // Normal query without username filtering
+        paginatedQuery = `
+        SELECT
+          p.id,
+          p.user_id,
+          p.content,
+          p.file_url,
+          p.file_size,
+          p.media_type,
+          p.is_active,
+          p.is_edited,
+          p.status,
+          p.created_at,
+          p.updated_at,
+          u.username,
+          u.email,
+          COALESCE(
+            SUM(CASE WHEN r.status = $1 THEN 1 ELSE 0 END),
+            0
+          ) AS active_reports,
+          COUNT(r.id) AS total_reports
+        FROM posts p
+        JOIN users u
+          ON u.id = p.user_id
+        JOIN reports r
+          ON r.reported_content_id = p.id
+        GROUP BY
+          p.id,
+          p.user_id,
+          p.content,
+          p.file_url,
+          p.file_size,
+          p.media_type,
+          p.is_active,
+          p.is_edited,
+          p.status,
+          p.created_at,
+          p.updated_at,
+          u.username,
+          u.email
+        ORDER BY ${validFields[orderBy]} ${orderDirection}
+        LIMIT $2 OFFSET $3;
+        `;
+    }
+
+    // Debugging: See the query being executed
+    //console.log("Executing Query:", paginatedQuery);
+    //console.log("With Values:", values);
+
+    // Execute the query
     const result: QueryResult<ReportedPost> = await client.query(paginatedQuery, values);
 
     if (result.rows.length === 0) {
         return { message: 'No reported posts in this page range.' };
     }
+
     return result.rows;
 };
+
 
 /**
  * Retrieves all reported posts (no pagination).
@@ -108,8 +185,8 @@ export const getAllReportedPosts = async (): Promise<ReportedPost[] | { message:
       p.updated_at,
       u.username,
       u.email
-    ORDER BY p.created_at DESC;
-  `;
+    ORDER BY p.created_at DESC
+    `;
     const values = [ACTIVE_REPORT_STATUS];
     const res: QueryResult<ReportedPost> = await client.query(query, values);
 
@@ -122,17 +199,25 @@ export const getAllReportedPosts = async (): Promise<ReportedPost[] | { message:
 /**
  * Returns the count of unique reported posts.
  */
-export const getReportedPostsCount = async (): Promise<number> => {
-    const countQuery = `
-    SELECT COUNT(DISTINCT p.id) AS reported_count
-    FROM posts p
-    JOIN reports r
-      ON r.reported_content_id = p.id;
-  `;
-    const result = await client.query<{ reported_count: string }>(countQuery);
+export const getReportedPostsCount = async (username?: string): Promise<number> => {
+    let countQuery = `
+        SELECT COUNT(DISTINCT p.id) AS reported_count
+        FROM posts p
+        JOIN reports r
+          ON r.reported_content_id = p.id
+    `;
+    const values: string[] = [];
+    if (username) {
+        countQuery += `
+        JOIN users u
+          ON u.id = p.user_id
+        WHERE LOWER(u.username) = LOWER($1)
+        `;
+        values.push(username);
+    }
+    const result = await client.query<{ reported_count: string }>(countQuery, values);
     return parseInt(result.rows[0].reported_count, 10);
 };
-
 /**
  * Soft deletes a reported post by setting its is_active status to false.
  * 

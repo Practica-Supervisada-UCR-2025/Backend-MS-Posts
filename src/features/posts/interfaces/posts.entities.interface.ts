@@ -11,6 +11,13 @@ export interface BasePost {
   created_at: Date;
   updated_at: Date;
 }
-
-export interface Post extends BasePost {
+export interface PaginatedResponse<T> {
+    message: string;
+    data: T[];
+    metadata: {
+        totalItems: number;
+        totalPages: number;
+        currentPage: number;
+    };
 }
+export interface Post extends BasePost {}

@@ -1,7 +1,7 @@
 import request from 'supertest';
 import express from 'express';import { authenticateJWT } from '../../src/features/middleware/authenticate.middleware';
-import { getUserPostsController } from '../../src/features/posts/controllers/userPosts.controller';
-import postsRoutes from '../../src/features/posts/routes/userPosts.routes';
+import { getUserPostsController } from '../../src/features/posts/controllers/getPosts.controller';
+import postsRoutes from '../../src/features/posts/routes/post.routes';
 
 // Creamos una app de testing
 const app = express();
@@ -9,9 +9,9 @@ app.use(express.json());
 app.use(postsRoutes);
 
 jest.mock('../../src/features/middleware/authenticate.middleware');
-jest.mock('../../src/features/posts/controllers/userPosts.controller');
+jest.mock('../../src/features/posts/controllers/getPosts.controller');
 
-describe('GET /api/posts/mine', () => {
+describe('GET /api/user/posts/mine', () => {
   const mockedAuthenticateJWT = jest.mocked(authenticateJWT);
   const mockedGetUserPostsController = jest.mocked(getUserPostsController);
 
@@ -34,7 +34,7 @@ describe('GET /api/posts/mine', () => {
     });
 
     const response = await request(app)
-      .get('/posts/mine')
+      .get('/user/posts/mine')
       .set('Authorization', 'Bearer valid-token');
 
     expect(response.status).toBe(200);
@@ -54,7 +54,7 @@ describe('GET /api/posts/mine', () => {
       res.status(401).json({ message: 'Unauthorized' });
     });
 
-    const response = await request(app).get('/posts/mine');
+    const response = await request(app).get('/user/posts/mine');
 
     expect(response.status).toBe(401);
     expect(response.body).toEqual({ message: 'Unauthorized' });
