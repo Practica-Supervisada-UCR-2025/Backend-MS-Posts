@@ -21,8 +21,10 @@ interface ReportedPostsResponse {
 }
 
 /**
- * Response shape for delete reported post operation.
- * Indicates the success status and provides a descriptive message.
+ * @interface DeleteReportedPostResponse
+ * @description Response shape for delete reported post operation
+ * @property {boolean} success - Indicates if the operation was successful
+ * @property {string} message - Descriptive message about the operation result
  */
 interface DeleteReportedPostResponse {
   success: boolean;
@@ -98,13 +100,16 @@ export const getReportedPosts = async (
 };
 
 /**
- * Deletes a reported post by setting its is_active status to false.
+ * @function deleteReportedPost
+ * @description Deletes a reported post by setting its is_active status to false
  * 
- * @param dto - The DTO containing the post ID to delete
- * @returns An object containing:
+ * @param {DeleteReportedPostDto} dto - The DTO containing the post ID to delete
+ * 
+ * @returns {Promise<DeleteReportedPostResponse>} Object containing:
  *  - success: boolean indicating if the operation was successful
  *  - message: string describing the operation result
- * @throws InternalServerError If an unexpected error occurs during deletion
+ * 
+ * @throws {InternalServerError} If an unexpected error occurs during deletion
  */
 export const deleteReportedPost = async(
   dto: DeleteReportedPostDto

@@ -188,7 +188,7 @@ describe('POST /admin/reported/delete → deleteReportedPostController', () => {
 
         expect(res.body).toEqual({
             message: 'Validation error',
-            details: ['El ID del post es requerido']
+            details: ['Post ID is required']
         });
     });
 

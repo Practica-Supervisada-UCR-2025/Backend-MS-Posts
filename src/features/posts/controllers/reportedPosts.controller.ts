@@ -6,7 +6,6 @@ import { BadRequestError, UnauthorizedError } from '../../../utils/errors/api-er
 import { getReportedPostsSchema, GetReportedPostsDto } from '../dto/getReportedPosts.dto';
 import { DeleteReportedPostDto, deleteReportedPostSchema } from '../dto/deleteReportedPost.dto';
 
-
 /**
  * Controller for fetching paginated reported posts.
  *
@@ -68,6 +67,22 @@ export const getReportedPostsController = async (
   }
 };
 
+/**
+ * @function deleteReportedPostController
+ * @description Controller for deleting a reported post
+ * 
+ * @param {AuthenticatedRequest} req - Express request object with user authentication
+ * @param {Response} res - Express response object
+ * @param {NextFunction} next - Express next middleware function
+ * 
+ * @returns {Promise<void>} Sends JSON response with:
+ *  - success: boolean
+ *  - message: string
+ * 
+ * @throws {UnauthorizedError} If user is not authenticated
+ * @throws {BadRequestError} If request body fails validation
+ * @throws {Error} Any other error is forwarded to error-handling middleware
+ */
 export const deleteReportedPostController = async (
   req: AuthenticatedRequest, 
   res: Response,
