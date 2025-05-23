@@ -10,11 +10,7 @@ describe('deleteReportedPostSchema', () => {
 
     const result = await deleteReportedPostSchema.validate(input);
 
-    expect(result).toEqual({
-      postId: '123',
-      authorUsername: 'author123',
-      moderatorUsername: 'moderator123'
-    });
+    expect(result).toEqual(input);
   });
 
   it('should throw an error when postId is missing', async () => {
@@ -24,7 +20,7 @@ describe('deleteReportedPostSchema', () => {
     };
 
     await expect(deleteReportedPostSchema.validate(input)).rejects.toThrow(
-      'El ID del post es requerido'
+      'Post ID is required'
     );
   });
 
@@ -35,7 +31,7 @@ describe('deleteReportedPostSchema', () => {
     };
 
     await expect(deleteReportedPostSchema.validate(input)).rejects.toThrow(
-      'El nombre del autor es requerido'
+      'Author username is required'
     );
   });
 
@@ -46,7 +42,7 @@ describe('deleteReportedPostSchema', () => {
     };
 
     await expect(deleteReportedPostSchema.validate(input)).rejects.toThrow(
-      'El nombre del moderador es requerido'
+      'Moderator username is required'
     );
   });
 
@@ -58,7 +54,7 @@ describe('deleteReportedPostSchema', () => {
     };
 
     await expect(deleteReportedPostSchema.validate(input)).rejects.toThrow(
-      'El ID del post es requerido'
+      'Post ID is required'
     );
   });
 
@@ -70,7 +66,7 @@ describe('deleteReportedPostSchema', () => {
     };
 
     await expect(deleteReportedPostSchema.validate(input)).rejects.toThrow(
-      'El nombre del autor es requerido'
+      'Author username is required'
     );
   });
 
@@ -82,7 +78,7 @@ describe('deleteReportedPostSchema', () => {
     };
 
     await expect(deleteReportedPostSchema.validate(input)).rejects.toThrow(
-      'El nombre del moderador es requerido'
+      'Moderator username is required'
     );
   });
 
