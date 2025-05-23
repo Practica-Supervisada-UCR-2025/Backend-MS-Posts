@@ -1,5 +1,5 @@
 import { NextFunction, Response } from 'express';
-import { getReportedPosts, deleteReportedPost } from '../services/reportedPosts.service';
+import { getReportedPosts, deleteReportedPost, restoreReportedPost } from '../services/reportedPosts.service';
 import * as yup from 'yup';
 import { AuthenticatedRequest } from '../../../features/middleware/authenticate.middleware';
 import { BadRequestError, UnauthorizedError } from '../../../utils/errors/api-error';

@@ -3,7 +3,8 @@ import {
   getReportedPostsPaginated,
   getAllReportedPosts,
   getReportedPostsCount,
-  deleteReportedPost
+  deleteReportedPost,
+  restoreReportedPost
 } from '../../src/features/posts/repositories/reported.posts.repository';
 import client from '../../src/config/database';
 import { QueryResult } from 'pg';
@@ -185,6 +186,61 @@ describe('Reported Posts Repository', () => {
 
       expect(result).toEqual({
         message: 'Post and its reports have been successfully deactivated'
+      });
+    });
+  });
+
+  describe('restoreReportedPost', () => {
+    it('should successfully restore a post and its reports', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // BEGIN
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 1, oid: 0, fields: [] } as QueryResult) // UPDATE posts
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 1, oid: 0, fields: [] } as QueryResult) // UPDATE reports
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult); // COMMIT
+
+      const result = await restoreReportedPost('post123');
+
+      expect(result).toEqual({
+        message: 'Post has been successfully restored'
+      });
+
+      // Verify the sequence of calls
+      const calls = mockClient.query.mock.calls;
+      expect(calls[0][0]).toBe('BEGIN;');
+      expect(calls[1][0]).toBe('UPDATE posts SET is_active = 1 WHERE id = $1');
+      expect(calls[1][1]).toEqual(['post123']);
+      expect(calls[2][0]).toBe('UPDATE reports SET status = 1 WHERE reported_content_id = $1');
+      expect(calls[2][1]).toEqual(['post123']);
+      expect(calls[3][0]).toBe('COMMIT;');
+    });
+
+    it('should handle database errors and rollback transaction', async () => {
+      const mockError = new Error('Database error');
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // BEGIN
+        .mockRejectedValueOnce(mockError) // First UPDATE
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult); // ROLLBACK
+
+      try {
+        await restoreReportedPost('post123');
+        fail('Expected restoreReportedPost to throw an error');
+      } catch (error) {
+        expect(error).toBe(mockError);
+        expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK;');
+      }
+    });
+
+    it('should handle case where post is not found', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // BEGIN
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // UPDATE posts
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // UPDATE reports
+        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult); // COMMIT
+
+      const result = await restoreReportedPost('nonexistent');
+
+      expect(result).toEqual({
+        message: 'Post has been successfully restored'
       });
     });
   });
