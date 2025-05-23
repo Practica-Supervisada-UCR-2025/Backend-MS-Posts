@@ -126,3 +126,47 @@ export const deleteReportedPostController = async (
         return next(error);
     }
 };
+
+export const restoreReportedPostController = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Validate the role first
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: You do not have permission to perform this action'
+      });
+    }
+
+    // Validate the request body
+    const validatedData = await deleteReportedPostSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    }) as DeleteReportedPostDto;
+
+    const result = await restoreReportedPost(validatedData);
+
+    if (result.success) {
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: result.message
+      });
+    }
+  } catch (error) {
+    if (error instanceof yup.ValidationError) {
+      return res.status(400).json({
+        message: 'Validation error',
+        details: error.errors
+      });
+    }
+    return next(error);
+  }
+};

@@ -1,7 +1,8 @@
 import {
   getReportedPostsPaginated,
   getReportedPostsCount,
-  deleteReportedPost as deleteReportedPostFromDb
+  deleteReportedPost as deleteReportedPostFromDb,
+  restoreReportedPost as restoreReportedPostFromDb
 } from '../repositories/reported.posts.repository';
 import { ReportedPost } from '@/features/posts/interfaces/reportedPost.entities.interface';
 import { BadRequestError, InternalServerError } from '../../../utils/errors/api-error';
@@ -127,3 +128,32 @@ export const deleteReportedPost = async(
       };
     }
 }
+
+/**
+ * @function restoreReportedPost
+ * @description Restores a reported post by setting its is_active status to true
+ * 
+ * @param {RestoreReportedPostDto} dto - The DTO containing the post ID to restore
+ * 
+ * @returns {Promise<RestoreReportedPostResponse>} Object containing:
+ *  - success: boolean indicating if the operation was successful
+ *  - message: string describing the operation result
+ * 
+ * @throws {InternalServerError} If an unexpected error occurs during restoration
+ */
+export const restoreReportedPost = async(
+  dto: DeleteReportedPostDto
+): Promise<DeleteReportedPostResponse> => {
+  try {
+    const result = await restoreReportedPostFromDb(dto.postId);
+    return {
+      success: true,
+      message: result.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'An unexpected error occurred',
+    };
+  }
+};

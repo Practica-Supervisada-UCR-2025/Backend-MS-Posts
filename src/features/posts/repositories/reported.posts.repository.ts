@@ -250,3 +250,25 @@ export const deleteReportedPost = async (postId: string): Promise<{message: stri
     throw error;
   }
 }
+/**
+ * Restores a reported post by setting its is_active status to true
+ * 
+ * @param postId - ID of the post to restore
+ * @returns Object containing a message indicating the operation result
+ */
+export const restoreReportedPost = async (postId: string): Promise<{message: string}> => {
+  try {
+    await client.query('BEGIN;');
+    
+    await client.query('UPDATE posts SET is_active = 1 WHERE id = $1', [postId]);
+
+    await client.query('UPDATE reports SET status = 1 WHERE reported_content_id = $1', [postId]);
+    
+    await client.query('COMMIT;');
+    
+    return { message: 'Post has been successfully restored' };
+  } catch (error) {
+    await client.query('ROLLBACK;');
+    throw error;
+  }
+}
