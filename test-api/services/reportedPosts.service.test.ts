@@ -1,4 +1,4 @@
-import { getReportedPosts, deleteReportedPost } from '../../src/features/posts/services/reportedPosts.service';
+import { getReportedPosts, deleteReportedPost, restoreReportedPost } from '../../src/features/posts/services/reportedPosts.service';
 import * as reportedRepo from '../../src/features/posts/repositories/reported.posts.repository';
 import { BadRequestError, InternalServerError } from '../../src/utils/errors/api-error';
 import { ReportedPost } from '../../src/features/posts/interfaces/reportedPost.entities.interface';
@@ -8,6 +8,7 @@ jest.mock('../../src/features/posts/repositories/reported.posts.repository');
 const mockedCount = jest.mocked(reportedRepo.getReportedPostsCount);
 const mockedPaginated = jest.mocked(reportedRepo.getReportedPostsPaginated);
 const mockedDeletePost = jest.mocked(reportedRepo.deleteReportedPost);
+const mockedRestorePost = jest.mocked(reportedRepo.restoreReportedPost);
 
 describe('getReportedPosts service', () => {
   beforeEach(() => {
@@ -150,6 +151,61 @@ describe('deleteReportedPost service', () => {
 
     // Assert
     expect(mockedDeletePost).toHaveBeenCalledWith('123');
+    expect(result).toEqual({
+      success: false,
+      message: 'An unexpected error occurred'
+    });
+  });
+});
+
+describe('restoreReportedPost service', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('returns success response when post is successfully restored', async () => {
+    // Arrange
+    const mockResult = {
+      message: 'Post has been successfully restored'
+    };
+    mockedRestorePost.mockResolvedValueOnce(mockResult);
+
+    // Act
+    const result = await restoreReportedPost({ postId: '123' });
+
+    // Assert
+    expect(mockedRestorePost).toHaveBeenCalledWith('123');
+    expect(result).toEqual({
+      success: true,
+      message: mockResult.message
+    });
+  });
+
+  it('returns error response when repository throws an error', async () => {
+    // Arrange
+    const errorMessage = 'Database connection failed';
+    mockedRestorePost.mockRejectedValueOnce(new Error(errorMessage));
+
+    // Act
+    const result = await restoreReportedPost({ postId: '123' });
+
+    // Assert
+    expect(mockedRestorePost).toHaveBeenCalledWith('123');
+    expect(result).toEqual({
+      success: false,
+      message: errorMessage
+    });
+  });
+
+  it('handles non-Error objects in catch block', async () => {
+    // Arrange
+    mockedRestorePost.mockRejectedValueOnce('Unknown error');
+
+    // Act
+    const result = await restoreReportedPost({ postId: '123' });
+
+    // Assert
+    expect(mockedRestorePost).toHaveBeenCalledWith('123');
     expect(result).toEqual({
       success: false,
       message: 'An unexpected error occurred'

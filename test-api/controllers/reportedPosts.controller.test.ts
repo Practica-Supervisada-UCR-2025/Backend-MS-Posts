@@ -4,6 +4,7 @@ import postsRoutes from '../../src/features/posts/routes/post.routes';
 import { errorHandler } from '../../src/utils/errors/error-handler.middleware';
 import * as reportedPostsService from '../../src/features/posts/services/reportedPosts.service';
 import reportedPostsRoutes from '../../src/features/posts/routes/reportedPosts.routes';
+import { BadRequestError } from '../../src/utils/errors/api-error';
 
 jest.mock('../../src/features/posts/services/reportedPosts.service');
 
@@ -304,6 +305,55 @@ describe('POST /admin/reported/restore → restoreReportedPostController', () =>
         expect(res.body).toEqual({
             success: false,
             message: errorMessage
+        });
+    });
+
+    it('returns 400 when validation fails with multiple errors', async () => {
+        const res = await request(app)
+            .post('/admin/reported/restore')
+            .set('Authorization', 'Bearer valid-token')
+            .send({
+                postId: '',  // Invalid empty string
+                authorUsername: '',  // Invalid empty string
+                moderatorUsername: ''  // Invalid empty string
+            })
+            .expect(400);
+
+        expect(res.body).toEqual({
+            message: 'Validation error',
+            details: expect.arrayContaining([
+                'Post ID is required',
+                'Author username is required',
+                'Moderator username is required'
+            ])
+        });
+    });
+
+    it('returns 500 when service throws unexpected error', async () => {
+        (reportedPostsService.restoreReportedPost as jest.Mock).mockRejectedValueOnce(new Error('Unexpected error'));
+
+        const res = await request(app)
+            .post('/admin/reported/restore')
+            .set('Authorization', 'Bearer valid-token')
+            .send(validRequestData)
+            .expect(500);
+
+        expect(res.body).toEqual({
+            message: 'Internal Server Error'
+        });
+    });
+
+    it('returns 400 when service returns validation error', async () => {
+        (reportedPostsService.restoreReportedPost as jest.Mock).mockRejectedValueOnce(new BadRequestError('Invalid post ID'));
+
+        const res = await request(app)
+            .post('/admin/reported/restore')
+            .set('Authorization', 'Bearer valid-token')
+            .send(validRequestData)
+            .expect(400);
+
+        expect(res.body).toEqual({
+            message: 'Invalid post ID'
         });
     });
 });

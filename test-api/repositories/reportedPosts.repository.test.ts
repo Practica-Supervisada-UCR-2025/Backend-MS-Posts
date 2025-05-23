@@ -192,56 +192,36 @@ describe('Reported Posts Repository', () => {
 
   describe('restoreReportedPost', () => {
     it('should successfully restore a post and its reports', async () => {
+      // Mock successful query execution
       mockClient.query
-        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // BEGIN
-        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 1, oid: 0, fields: [] } as QueryResult) // UPDATE posts
-        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 1, oid: 0, fields: [] } as QueryResult) // UPDATE reports
-        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult); // COMMIT
+        .mockResolvedValueOnce({ rows: [] }) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE posts
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE reports
+        .mockResolvedValueOnce({ rows: [] }); // COMMIT
 
-      const result = await restoreReportedPost('post123');
+      const result = await restoreReportedPost('123');
 
-      expect(result).toEqual({
-        message: 'Post has been successfully restored'
-      });
-
-      // Verify the sequence of calls
-      const calls = mockClient.query.mock.calls;
-      expect(calls[0][0]).toBe('BEGIN;');
-      expect(calls[1][0]).toBe('UPDATE posts SET is_active = 1 WHERE id = $1');
-      expect(calls[1][1]).toEqual(['post123']);
-      expect(calls[2][0]).toBe('UPDATE reports SET status = 1 WHERE reported_content_id = $1');
-      expect(calls[2][1]).toEqual(['post123']);
-      expect(calls[3][0]).toBe('COMMIT;');
+      expect(mockClient.query).toHaveBeenCalledTimes(4);
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN;');
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'UPDATE posts SET is_active = 1 WHERE id = $1', ['123']);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'UPDATE reports SET status = 1 WHERE reported_content_id = $1', ['123']);
+      expect(mockClient.query).toHaveBeenNthCalledWith(4, 'COMMIT;');
+      expect(result).toEqual({ message: 'Post has been successfully restored' });
     });
 
-    it('should handle database errors and rollback transaction', async () => {
-      const mockError = new Error('Database error');
+    it('should rollback transaction on error', async () => {
+      // Mock error during posts update
       mockClient.query
-        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // BEGIN
-        .mockRejectedValueOnce(mockError) // First UPDATE
-        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult); // ROLLBACK
+        .mockResolvedValueOnce({ rows: [] }) // BEGIN
+        .mockRejectedValueOnce(new Error('Database error')) // UPDATE posts fails
+        .mockResolvedValueOnce({ rows: [] }); // ROLLBACK
 
-      try {
-        await restoreReportedPost('post123');
-        fail('Expected restoreReportedPost to throw an error');
-      } catch (error) {
-        expect(error).toBe(mockError);
-        expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK;');
-      }
-    });
+      await expect(restoreReportedPost('123')).rejects.toThrow('Database error');
 
-    it('should handle case where post is not found', async () => {
-      mockClient.query
-        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // BEGIN
-        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // UPDATE posts
-        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult) // UPDATE reports
-        .mockResolvedValueOnce({ rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult); // COMMIT
-
-      const result = await restoreReportedPost('nonexistent');
-
-      expect(result).toEqual({
-        message: 'Post has been successfully restored'
-      });
+      expect(mockClient.query).toHaveBeenCalledTimes(3);
+      expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN;');
+      expect(mockClient.query).toHaveBeenNthCalledWith(2, 'UPDATE posts SET is_active = 1 WHERE id = $1', ['123']);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'ROLLBACK;');
     });
   });
 });
