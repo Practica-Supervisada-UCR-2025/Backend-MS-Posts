@@ -14,7 +14,7 @@ export const getVisiblePostsByUserIdPaginated = async (user_id: string, offset: 
   // Fetching user UUID by email
   const postQuery = `
     SELECT id, content, file_url, media_type, created_at FROM posts 
-    WHERE user_id = $1 AND status = 1 
+    WHERE user_id = $1 AND status = 1 AND is_active = true
     ORDER BY created_at DESC 
     LIMIT $2 OFFSET $3
   `;
