@@ -19,10 +19,13 @@ interface ReportedPostsResponse {
 }
 
 /**
- * Fetches paginated reported posts.
+ * Fetches paginated reported posts with optional sorting and filtering.
  *
  * @param page  - The page number to fetch (1-based).
  * @param limit - The number of posts per page (must be > 0).
+ * @param orderBy - The field to sort by (date, report_count, username).
+ * @param orderDirection - The direction of sorting (ASC, DESC).
+ * @param username - (Optional) The username to filter reported posts.
  * @returns An object containing:
  *  - message: confirmation string,
  *  - posts: array of ReportedPost,
@@ -32,7 +35,10 @@ interface ReportedPostsResponse {
  */
 export const getReportedPosts = async (
     page: number,
-    limit: number
+    limit: number,
+    orderBy: 'date' | 'report_count', // Default sorting by date
+    orderDirection: 'ASC' | 'DESC' = 'DESC', // Default descending order
+    username?: string  // Optional username filter
 ): Promise<ReportedPostsResponse> => {
   if (page < 1 || limit < 1) {
     throw new BadRequestError('Page and limit must be positive integers.');
@@ -40,11 +46,19 @@ export const getReportedPosts = async (
 
   try {
     const offset = (page - 1) * limit;
-
-    const totalPosts = await getReportedPostsCount();
+    
+    // Fetch the total count (with username filter if provided)
+    const totalPosts = await getReportedPostsCount(username);
     const totalPages = Math.ceil(totalPosts / limit);
 
-    const postsOrMessage = await getReportedPostsPaginated(limit, offset);
+    // Fetching sorted and filtered posts from the repository
+    const postsOrMessage = await getReportedPostsPaginated(
+      limit,
+      offset,
+      orderBy,
+      orderDirection,
+      username
+    );
 
     const posts = Array.isArray(postsOrMessage) ? postsOrMessage : [];
 
