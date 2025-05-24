@@ -28,8 +28,8 @@ export const getReportedPostsController = async (
 ) => {
   try {
 
-    if (req.user.role !== 'user') {
-      throw new UnauthorizedError('User not authenticated');
+    if (req.user.role !== 'admin') {
+      throw new UnauthorizedError('User with role "admin" is required to access reported posts.');
     }
 
     const validatedQuery = (await getReportedPostsSchema.validate(req.query, {
