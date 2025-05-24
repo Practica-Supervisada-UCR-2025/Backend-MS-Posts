@@ -218,3 +218,35 @@ export const getReportedPostsCount = async (username?: string): Promise<number> 
     const result = await client.query<{ reported_count: string }>(countQuery, values);
     return parseInt(result.rows[0].reported_count, 10);
 };
+/**
+ * Soft deletes a reported post and updates all its associated reports.
+ * 
+ * @param postId - ID of the post to delete
+ * @returns Object containing a message indicating the operation result
+ */
+export const deleteReportedPost = async (postId: string): Promise<{message: string}> => {
+  try {
+    // Start transaction
+    await client.query('BEGIN;');
+    
+    // Update the post status
+    await client.query(
+      'UPDATE posts SET is_active = 0 WHERE id = $1',
+      [postId]
+    );
+    
+    // Update all associated reports
+    await client.query(
+      'UPDATE reports SET status = 0 WHERE reported_content_id = $1',
+      [postId]
+    );
+    
+    // Commit transaction
+    await client.query('COMMIT;');
+    
+    return { message: 'Post and its reports have been successfully deactivated' };
+  } catch (error) {
+    await client.query('ROLLBACK;');
+    throw error;
+  }
+}

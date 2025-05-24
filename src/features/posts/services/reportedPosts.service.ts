@@ -1,9 +1,11 @@
 import {
   getReportedPostsPaginated,
   getReportedPostsCount,
+  deleteReportedPost as deleteReportedPostFromDb
 } from '../repositories/reported.posts.repository';
 import { ReportedPost } from '@/features/posts/interfaces/reportedPost.entities.interface';
 import { BadRequestError, InternalServerError } from '../../../utils/errors/api-error';
+import { DeleteReportedPostDto } from '../dto/deleteReportedPost.dto';
 
 /**
  * Response shape for paginated reported posts.
@@ -16,6 +18,26 @@ interface ReportedPostsResponse {
     totalPages: number;
     currentPage: number;
   };
+}
+
+/**
+ * @interface DeleteReportedPostResponse
+ * @description Response shape for delete reported post operation
+ * @property {boolean} success - Indicates if the operation was successful
+ * @property {string} message - Descriptive message about the operation result
+ */
+interface DeleteReportedPostResponse {
+  success: boolean;
+  message: string;
+}
+
+/**
+ * Response shape for delete reported post operation.
+ * Indicates the success status and provides a descriptive message.
+ */
+interface DeleteReportedPostResponse {
+  success: boolean;
+  message: string;
 }
 
 /**
@@ -76,3 +98,32 @@ export const getReportedPosts = async (
     throw new InternalServerError('Failed to fetch reported posts.');
   }
 };
+
+/**
+ * @function deleteReportedPost
+ * @description Deletes a reported post by setting its is_active status to false
+ * 
+ * @param {DeleteReportedPostDto} dto - The DTO containing the post ID to delete
+ * 
+ * @returns {Promise<DeleteReportedPostResponse>} Object containing:
+ *  - success: boolean indicating if the operation was successful
+ *  - message: string describing the operation result
+ * 
+ * @throws {InternalServerError} If an unexpected error occurs during deletion
+ */
+export const deleteReportedPost = async(
+  dto: DeleteReportedPostDto
+): Promise<DeleteReportedPostResponse> => {
+    try {
+      const result = await deleteReportedPostFromDb(dto.postId);
+      return {
+        success: true,
+        message: result.message,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'An unexpected error occurred',
+      };
+    }
+}
