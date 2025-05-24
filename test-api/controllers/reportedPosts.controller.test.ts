@@ -63,7 +63,7 @@ describe('GET /posts/reported → reportedPostsController', () => {
         },
     };
 
-    it('✅ returns 200 + body when authenticated and query is valid', async () => {
+    it(' returns 200 + body when authenticated and query is valid', async () => {
         (reportedPostsService.getReportedPosts as jest.Mock).mockResolvedValueOnce(mockResult);
 
         const res = await request(app)
@@ -76,7 +76,7 @@ describe('GET /posts/reported → reportedPostsController', () => {
         expect(reportedPostsService.getReportedPosts).toHaveBeenCalledWith(1, 10, "date", "DESC", undefined);
     });
 
-    it('❌ returns 401 when no Authorization header', async () => {
+    it(' returns 401 when no Authorization header', async () => {
         const res = await request(app)
             .get('/posts/reported')
             .expect(401);
@@ -84,7 +84,7 @@ describe('GET /posts/reported → reportedPostsController', () => {
         expect(res.body).toEqual({ message: 'Unauthorized' });
     });
 
-    it('❌ returns 401 when user has wrong role', async () => {
+    it(' returns 401 when user has wrong role', async () => {
         const res = await request(app)
             .get('/posts/reported')
             .set('Authorization', 'Bearer wrong-role')
@@ -96,7 +96,7 @@ describe('GET /posts/reported → reportedPostsController', () => {
         });
     });
 
-    it('❌ returns 400 when query params fail validation', async () => {
+    it(' returns 400 when query params fail validation', async () => {
         const res = await request(app)
             .get('/posts/reported')
             .set('Authorization', 'Bearer valid-token')
