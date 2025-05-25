@@ -218,3 +218,59 @@ export const getReportedPostsCount = async (username?: string): Promise<number> 
     const result = await client.query<{ reported_count: string }>(countQuery, values);
     return parseInt(result.rows[0].reported_count, 10);
 };
+/**
+ * Soft deletes a reported post and updates all its associated reports.
+ * 
+ * @param postId - ID of the post to delete
+ * @returns Object containing a message indicating the operation result
+ */
+export const deleteReportedPost = async (postId: string): Promise<{message: string}> => {
+  try {
+    await client.query('BEGIN;');
+    
+    await client.query(
+      'UPDATE posts SET is_active = false WHERE id = $1',
+      [postId]
+    );
+    
+    await client.query(
+      'UPDATE reports SET status = 0 WHERE reported_content_id = $1',
+      [postId]
+    );
+    
+    await client.query('COMMIT;');
+    
+    return { message: 'Post and its reports have been successfully deactivated' };
+  } catch (error) {
+    await client.query('ROLLBACK;');
+    throw error;
+  }
+}
+/**
+ * Restores a reported post by setting its is_active status to true
+ * 
+ * @param postId - ID of the post to restore
+ * @returns Object containing a message indicating the operation result
+ */
+export const restoreReportedPost = async (postId: string): Promise<{message: string}> => {
+  try {
+    await client.query('BEGIN;');
+    
+    await client.query(
+      'UPDATE posts SET is_active = true WHERE id = $1',
+      [postId]
+    );
+    
+    await client.query(
+      'UPDATE reports SET status = 1 WHERE reported_content_id = $1',
+      [postId]
+    );
+    
+    await client.query('COMMIT;');
+    
+    return { message: 'Post has been successfully restored' };
+  } catch (error) {
+    await client.query('ROLLBACK;');
+    throw error;
+  }
+}
