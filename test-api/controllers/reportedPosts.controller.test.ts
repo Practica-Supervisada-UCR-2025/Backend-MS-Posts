@@ -14,10 +14,9 @@ jest.mock('../../src/features/middleware/authenticate.middleware', () => {
     return {
         authenticateJWT: (req: any, res: any, next: any) => {
             const auth = req.headers.authorization as string;
-
             if (auth?.startsWith('Bearer valid-token')) {
-                // For admin routes, set admin role
-                if (req.path.startsWith('/admin')) {
+                // For reported posts routes, set admin role
+                if (req.path.startsWith('/posts/reported') || req.path.startsWith('/admin/reported')) {
                     req.user = { uuid: 'admin-uuid', email: 'admin@test.com', role: 'admin' };
                 } else {
                     // For other routes, set user role
@@ -25,10 +24,9 @@ jest.mock('../../src/features/middleware/authenticate.middleware', () => {
                 }
                 return next();
             }
-
             if (auth?.startsWith('Bearer wrong-role')) {
-                // For admin routes, set user role (wrong)
-                if (req.path.startsWith('/admin')) {
+                // For reported posts routes, set user role (wrong)
+                if (req.path.startsWith('/posts/reported') || req.path.startsWith('/admin/reported')) {
                     req.user = { uuid: 'user-uuid', email: 'a@b.com', role: 'user' };
                 } else {
                     // For other routes, set admin role (wrong)
@@ -36,7 +34,6 @@ jest.mock('../../src/features/middleware/authenticate.middleware', () => {
                 }
                 return next();
             }
-
             return next(new UnauthorizedError('Unauthorized'));
         },
     };
