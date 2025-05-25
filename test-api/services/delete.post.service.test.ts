@@ -18,8 +18,11 @@ describe("deleteOwnPostService", () => {
         });
 
         await expect(deleteOwnPostService(userId, "post-123")).resolves.toEqual({
-            postId: "post-123",
-            deleted: true,
+            success: true,
+            data: {
+                postId: "post-123",
+                deleted: true,
+            },
         });
 
         expect(deleteOwnPostRepository).toHaveBeenCalledWith("post-123");
@@ -28,9 +31,10 @@ describe("deleteOwnPostService", () => {
     it("should throw 404 if the post does not exist", async () => {
         (findPostById as jest.Mock).mockResolvedValue(null);
 
-        await expect(deleteOwnPostService(userId, "post-123")).rejects.toEqual({
+        await expect(deleteOwnPostService(userId, "post-123")).resolves.toEqual({
+            success: false,
             status: 404,
-            message: "Post not found."
+            message: "Post not found.",
         });
     });
 
@@ -41,9 +45,10 @@ describe("deleteOwnPostService", () => {
             is_active: true,
         });
 
-        await expect(deleteOwnPostService(userId, "post-123")).rejects.toEqual({
+        await expect(deleteOwnPostService(userId, "post-123")).resolves.toEqual({
+            success: false,
             status: 403,
-            message: "You are not authorized to delete this post."
+            message: "You are not authorized to delete this post.",
         });
     });
 
@@ -54,9 +59,10 @@ describe("deleteOwnPostService", () => {
             is_active: false,
         });
 
-        await expect(deleteOwnPostService(userId, "post-123")).rejects.toEqual({
+        await expect(deleteOwnPostService(userId, "post-123")).resolves.toEqual({
+            success: false,
             status: 400,
-            message: "This post is already deleted."
+            message: "This post is already deleted.",
         });
     });
 });
