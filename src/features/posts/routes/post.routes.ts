@@ -11,7 +11,7 @@ const router = Router();
 router.get('/user/posts/mine', authenticateJWT, getUserPostsController as RequestHandler);
 
 // Delete own post route (protected by JWT)
-router.delete('/user/posts/delete', authenticateJWT, deleteOwnPostController as RequestHandler);
+router.delete('/user/posts/delete/:postId', authenticateJWT, deleteOwnPostController as unknown as RequestHandler);
 
 // Get all reported posts route (protected by JWT)
 router.get('/posts/reported', authenticateJWT, getReportedPostsController as RequestHandler);
