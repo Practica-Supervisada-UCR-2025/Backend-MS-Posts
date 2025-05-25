@@ -7,23 +7,25 @@ export const deleteOwnPostController = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {
-    const userId = req.user.uuid;
-    const { postId } = req.body; 
+  const userId = req.user.uuid;
+  const { postId } = req.params;
 
-    if (!postId) {
-      return res.status(400).json({ status: 'error', message: 'Post ID is required.' });
-    }
-
-    const result = await deleteOwnPostService(userId, postId);
-
-    return res.status(200).json({
-      status: 'success',
-      message: 'Post successfully deleted.',
-      data: result,
-    });
-  } catch (error) {
-    next(error);
+  if (!postId) {
+    return res.status(400).json({ status: 'error', message: 'Post ID is required.' });
   }
-};
 
+  const result = await deleteOwnPostService(userId, postId);
+
+  if (!result.success) {
+    return res.status(result.status || 500).json({
+      status: 'error',
+      message: result.message,
+    });
+  }
+
+  return res.status(200).json({
+    status: 'success',
+    message: 'Post successfully deleted.',
+    data: result.data,
+  });
+};
