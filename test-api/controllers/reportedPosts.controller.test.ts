@@ -8,11 +8,13 @@ import { BadRequestError } from '../../src/utils/errors/api-error';
 
 jest.mock('../../src/features/posts/services/reportedPosts.service');
 
+
 jest.mock('../../src/features/middleware/authenticate.middleware', () => {
     const { UnauthorizedError } = require('../../src/utils/errors/api-error');
     return {
         authenticateJWT: (req: any, res: any, next: any) => {
             const auth = req.headers.authorization as string;
+
             if (auth?.startsWith('Bearer valid-token')) {
                 // For admin routes, set admin role
                 if (req.path.startsWith('/admin')) {
@@ -23,6 +25,7 @@ jest.mock('../../src/features/middleware/authenticate.middleware', () => {
                 }
                 return next();
             }
+
             if (auth?.startsWith('Bearer wrong-role')) {
                 // For admin routes, set user role (wrong)
                 if (req.path.startsWith('/admin')) {
@@ -33,7 +36,7 @@ jest.mock('../../src/features/middleware/authenticate.middleware', () => {
                 }
                 return next();
             }
-            // No header or bad token
+
             return next(new UnauthorizedError('Unauthorized'));
         },
     };
@@ -71,8 +74,7 @@ describe('GET /posts/reported → reportedPostsController', () => {
         },
     };
 
-    it('✅ returns 200 + body when authenticated and query is valid', async () => {
-        // have service.resolve to the mockResult
+    it(' returns 200 + body when authenticated and query is valid', async () => {
         (reportedPostsService.getReportedPosts as jest.Mock).mockResolvedValueOnce(mockResult);
 
         const res = await request(app)
@@ -85,7 +87,7 @@ describe('GET /posts/reported → reportedPostsController', () => {
         expect(reportedPostsService.getReportedPosts).toHaveBeenCalledWith(1, 10, "date", "DESC", undefined);
     });
 
-    it('returns 401 when no Authorization header', async () => {
+    it(' returns 401 when no Authorization header', async () => {
         const res = await request(app)
             .get('/posts/reported')
             .expect(401);
@@ -93,17 +95,19 @@ describe('GET /posts/reported → reportedPostsController', () => {
         expect(res.body).toEqual({ message: 'Unauthorized' });
     });
 
-    it('returns 401 when user has wrong role', async () => {
+    it(' returns 401 when user has wrong role', async () => {
         const res = await request(app)
             .get('/posts/reported')
             .set('Authorization', 'Bearer wrong-role')
             .query({ page: 1, limit: 10 })
             .expect(401);
 
-        expect(res.body).toEqual({ message: 'User not authenticated' });
+        expect(res.body).toEqual({
+            message: 'User with role "admin" is required to access reported posts.',
+        });
     });
 
-    it('returns 400 when query params fail validation', async () => {
+    it(' returns 400 when query params fail validation', async () => {
         const res = await request(app)
             .get('/posts/reported')
             .set('Authorization', 'Bearer valid-token')

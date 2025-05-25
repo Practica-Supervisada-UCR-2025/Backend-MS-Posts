@@ -11,40 +11,38 @@ const app = express();
 app.use(express.json());
 app.use("/api", postRoutes);
 
-describe("POST /api/user/posts/delete", () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
+describe("DELETE /api/user/posts/delete/:postId", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should call the controller for an authenticated user", async () => {
+    (authenticateJWT as jest.Mock).mockImplementation((req, res, next) => {
+      req.user = { uuid: "user-123" };
+      next();
     });
 
-    it("should call the controller for an authenticated user", async () => {
-        (authenticateJWT as jest.Mock).mockImplementation((req, res, next) => {
-            req.user = { uuid: "user-123" };
-            next();
-        });
-
-        (deleteOwnPostController as jest.Mock).mockImplementation((req, res) => {
-            res.status(200).json({ status: "success", message: "Post successfully deleted." });
-        });
-
-        const response = await request(app)
-            .delete("/api/user/posts/delete")
-            .send({ postId: "post-123" });
-
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual({ status: "success", message: "Post successfully deleted." });
-        expect(deleteOwnPostController).toHaveBeenCalled();
+    (deleteOwnPostController as jest.Mock).mockImplementation((req, res) => {
+      res.status(200).json({ status: "success", message: "Post successfully deleted." });
     });
 
-    it("should block unauthenticated users", async () => {
-        (authenticateJWT as jest.Mock).mockImplementation((req, res) => {
-            res.status(401).json({ status: "error", message: "Unauthorized" });
-        });
+    const response = await request(app)
+      .delete("/api/user/posts/delete/post-123"); // ← ID en la URL
 
-        const response = await request(app)
-            .delete("/api/user/posts/delete")
-            .send({ postId: "post-123" });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ status: "success", message: "Post successfully deleted." });
+    expect(deleteOwnPostController).toHaveBeenCalled();
+  });
 
-        expect(response.status).toBe(401);
-        expect(response.body).toEqual({ status: "error", message: "Unauthorized" });
+  it("should block unauthenticated users", async () => {
+    (authenticateJWT as jest.Mock).mockImplementation((req, res) => {
+      res.status(401).json({ status: "error", message: "Unauthorized" });
     });
+
+    const response = await request(app)
+      .delete("/api/user/posts/delete/post-123"); // ← ID en la URL
+
+    expect(response.status).toBe(401);
+    expect(response.body).toEqual({ status: "error", message: "Unauthorized" });
+  });
 });

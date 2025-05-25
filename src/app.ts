@@ -12,6 +12,8 @@ app.get('/', (req, res) => {
 });
 app.use(express.json());
 app.use(cors());
+
+// Add the user posts routes
 app.use('/api', postRoutes);
 app.use('/api', reportedPostsRoutes);
 
