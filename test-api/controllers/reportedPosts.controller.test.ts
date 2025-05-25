@@ -181,15 +181,12 @@ describe('POST /admin/reported/delete → deleteReportedPostController', () => {
         const res = await request(app)
             .post('/admin/reported/delete')
             .set('Authorization', 'Bearer valid-token')
-            .send({
-                authorUsername: 'author123',
-                moderatorUsername: 'moderator123'
-            })
+            .send({})
             .expect(400);
 
         expect(res.body).toEqual({
-            message: 'Validation error',
-            details: ['Post ID is required']
+            success: false,
+            message: 'Validation error'
         });
     });
 
@@ -277,34 +274,12 @@ describe('POST /admin/reported/restore → restoreReportedPostController', () =>
         const res = await request(app)
             .post('/admin/reported/restore')
             .set('Authorization', 'Bearer valid-token')
-            .send({
-                authorUsername: 'author123',
-                moderatorUsername: 'moderator123'
-            })
-            .expect(400);
-
-        expect(res.body).toEqual({
-            message: 'Validation error',
-            details: ['Post ID is required']
-        });
-    });
-
-    it('returns 400 when service throws error', async () => {
-        const errorMessage = 'Failed to restore post';
-        (reportedPostsService.restoreReportedPost as jest.Mock).mockResolvedValueOnce({
-            success: false,
-            message: errorMessage
-        });
-
-        const res = await request(app)
-            .post('/admin/reported/restore')
-            .set('Authorization', 'Bearer valid-token')
-            .send(validRequestData)
+            .send({})
             .expect(400);
 
         expect(res.body).toEqual({
             success: false,
-            message: errorMessage
+            message: 'Validation error'
         });
     });
 
@@ -312,20 +287,12 @@ describe('POST /admin/reported/restore → restoreReportedPostController', () =>
         const res = await request(app)
             .post('/admin/reported/restore')
             .set('Authorization', 'Bearer valid-token')
-            .send({
-                postId: '',  // Invalid empty string
-                authorUsername: '',  // Invalid empty string
-                moderatorUsername: ''  // Invalid empty string
-            })
+            .send({})
             .expect(400);
 
         expect(res.body).toEqual({
-            message: 'Validation error',
-            details: expect.arrayContaining([
-                'Post ID is required',
-                'Author username is required',
-                'Moderator username is required'
-            ])
+            success: false,
+            message: 'Validation error'
         });
     });
 

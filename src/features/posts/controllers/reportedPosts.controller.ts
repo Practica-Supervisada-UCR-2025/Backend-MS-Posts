@@ -119,8 +119,8 @@ export const deleteReportedPostController = async (
     } catch (error) {
         if (error instanceof yup.ValidationError) {
             return res.status(400).json({
-                message: 'Validation error',
-                details: error.errors
+                success: false,
+                message: 'Validation error'
             });
         }
         return next(error);
@@ -163,8 +163,8 @@ export const restoreReportedPostController = async (
   } catch (error) {
     if (error instanceof yup.ValidationError) {
       return res.status(400).json({
-        message: 'Validation error',
-        details: error.errors
+        success: false,
+        message: 'Validation error'
       });
     }
     return next(error);

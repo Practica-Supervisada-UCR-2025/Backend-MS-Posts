@@ -164,7 +164,7 @@ describe('Reported Posts Repository', () => {
       expect(calls[0][0]).toBe('BEGIN;');
       expect(calls[1][0]).toBe('UPDATE posts SET is_active = false WHERE id = $1');
       expect(calls[1][1]).toEqual(['post123']);
-      expect(calls[2][0]).toBe('UPDATE reports SET status = false WHERE reported_content_id = $1');
+      expect(calls[2][0]).toBe('UPDATE reports SET status = 0 WHERE reported_content_id = $1');
       expect(calls[2][1]).toEqual(['post123']);
       expect(calls[3][0]).toBe('COMMIT;');
       expect(result).toEqual({ message: 'Post and its reports have been successfully deactivated' });
@@ -214,7 +214,7 @@ describe('Reported Posts Repository', () => {
       expect(mockClient.query).toHaveBeenCalledTimes(4);
       expect(mockClient.query).toHaveBeenNthCalledWith(1, 'BEGIN;');
       expect(mockClient.query).toHaveBeenNthCalledWith(2, 'UPDATE posts SET is_active = true WHERE id = $1', ['123']);
-      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'UPDATE reports SET status = true WHERE reported_content_id = $1', ['123']);
+      expect(mockClient.query).toHaveBeenNthCalledWith(3, 'UPDATE reports SET status = 1 WHERE reported_content_id = $1', ['123']);
       expect(mockClient.query).toHaveBeenNthCalledWith(4, 'COMMIT;');
       expect(result).toEqual({ message: 'Post has been successfully restored' });
     });

@@ -234,7 +234,7 @@ export const deleteReportedPost = async (postId: string): Promise<{message: stri
     );
     
     await client.query(
-      'UPDATE reports SET status = false WHERE reported_content_id = $1',
+      'UPDATE reports SET status = 0 WHERE reported_content_id = $1',
       [postId]
     );
     
@@ -262,7 +262,7 @@ export const restoreReportedPost = async (postId: string): Promise<{message: str
     );
     
     await client.query(
-      'UPDATE reports SET status = true WHERE reported_content_id = $1',
+      'UPDATE reports SET status = 1 WHERE reported_content_id = $1',
       [postId]
     );
     
