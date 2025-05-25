@@ -50,6 +50,10 @@ export const createPostController = async (req: AuthenticatedRequest, res: Respo
       throw new BadRequestError('You must send exactly one file if mediatype is 0 or 1');
     }
 
+    if (!(validatedBody.mediaType === 0 || validatedBody.mediaType === 1) && file) {
+      throw new BadRequestError('Mediatype must be 0 or 1 if file is present');
+    }
+
     if (validatedBody.mediaType === 2 && file) {
       throw new BadRequestError('You must not send a file when mediaType is 2');
     }
@@ -59,7 +63,7 @@ export const createPostController = async (req: AuthenticatedRequest, res: Respo
 
     const post = await createPost(email, token, validatedBody, file);
 
-    res.status(200).json({
+    res.status(201).json({
       message: 'Post created successfully',
       post: post,
     });
