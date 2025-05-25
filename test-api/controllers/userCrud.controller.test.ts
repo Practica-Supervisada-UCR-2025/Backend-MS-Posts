@@ -54,7 +54,7 @@ describe('POST /posts/newPost → createPostController', () => {
     updated_at: '2025-05-19T10:00:00.000Z',
   };
 
-  it('returns 200 + body when authenticated and valid data', async () => {
+  it('returns 201 + body when authenticated and valid data', async () => {
     (postCrudService.createPost as jest.Mock).mockResolvedValueOnce(mockPost);
 
     const res = await request(app)
@@ -63,7 +63,7 @@ describe('POST /posts/newPost → createPostController', () => {
       .field('content', 'Hola mundo')
       .field('mediaType', '1')
       .attach('file', Buffer.from('fake-image'), { filename: 'test.png', contentType: 'image/png' })
-      .expect(200);
+      .expect(201);
 
     expect(res.body).toEqual({
       message: 'Post created successfully',
@@ -145,7 +145,7 @@ describe('POST /posts/newPost → createPostController', () => {
       .attach('file', Buffer.from('fake-image'), { filename: 'test.gif', contentType: 'image/gif' })
       .expect(400);
 
-    expect(res.body.message).toBe('You must not send a file when mediaType is 2');
+    expect(res.body.message).toBe('Mediatype must be 0 or 1 if file is present');
   });
 
   it('returns 400 if mediaType=0 or 1 and no file is sent', async () => {
