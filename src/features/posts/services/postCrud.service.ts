@@ -54,7 +54,7 @@ export const uploadFileToMicroservice = async (file: Express.Multer.File, tokenA
   headers['Authorization'] = `Bearer ${tokenAuth}`;
 
 
-  const response = await axios.post('http://157.230.224.13:3006/api/files/upload', formData, { headers });
+  const response = await axios.post(`http://${process.env.MS_FILES_URL}/api/files/upload`, formData, { headers });
 
   if (response.status !== 200) {
     throw new Error('Error uploading file to microservice');
