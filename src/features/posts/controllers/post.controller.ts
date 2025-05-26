@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { deleteOwnPostService } from '../services/post.service';
 import { AuthenticatedRequest } from '../../middleware/authenticate.middleware';
+import { validate as isUuid } from 'uuid';
 
 export const deleteOwnPostController = async (
   req: AuthenticatedRequest,
@@ -10,8 +11,8 @@ export const deleteOwnPostController = async (
   const userId = req.user.uuid;
   const { postId } = req.params;
 
-  if (!postId) {
-    return res.status(400).json({ status: 'error', message: 'Post ID is required.' });
+  if (!postId || !isUuid(postId)) {
+    return res.status(400).json({ status: 'error', message: 'Valid Post ID is required.' });
   }
 
   const result = await deleteOwnPostService(userId, postId);
