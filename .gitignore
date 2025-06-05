@@ -54,3 +54,6 @@ pids/
 
 # parcel-bundler cache
 .cache
+
+# MCP configuration file
+.roo/mcp.json
