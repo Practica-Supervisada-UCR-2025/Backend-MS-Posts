@@ -2,11 +2,14 @@ import {
   getReportedPostsPaginated,
   getReportedPostsCount,
   deleteReportedPost as deleteReportedPostFromDb,
-  restoreReportedPost as restoreReportedPostFromDb
+  restoreReportedPost as restoreReportedPostFromDb,
+  saveReportedPost,
 } from '../repositories/reported.posts.repository';
 import { ReportedPost } from '@/features/posts/interfaces/reportedPost.entities.interface';
+import { ReportPostDTO } from '../dto/reportPost.dto';
 import { BadRequestError, InternalServerError } from '../../../utils/errors/api-error';
 import { DeleteReportedPostDto } from '../dto/deleteReportedPost.dto';
+import { verify } from 'jsonwebtoken';
 
 /**
  * Response shape for paginated reported posts.
@@ -155,5 +158,33 @@ export const restoreReportedPost = async(
       success: false,
       message: error instanceof Error ? error.message : 'An unexpected error occurred',
     };
+  }
+};
+
+/**
+ * Reports a post by saving the report details to the database.
+ *
+ * @param dto - The DTO containing the report details
+ * @returns Object containing a message indicating the operation result
+ * @throws BadRequestError If validation fails
+ * @throws InternalServerError If an unexpected error occurs
+ */
+export const reportPost = async (dto: ReportPostDTO): Promise<{ message: string }> => {
+  try {
+    const { postId, reason, reportedBy } = dto;
+
+    // const IsReported = await verifyIfPostIsReported(postId, reportedBy);
+    // if (IsReported) {
+    //   console.warn(`User ${reportedBy} has already reported post ${postId}`);
+    //   throw new BadRequestError('This post has already been reported by you.');
+    // }
+
+    // Save the reported post to the database
+    const result = await saveReportedPost(postId, reason, reportedBy);
+
+    return { message: result.message };
+  } catch (error) {
+    console.error('Error in reportPost:', error);
+    throw new InternalServerError('Failed to report the post.');
   }
 };
