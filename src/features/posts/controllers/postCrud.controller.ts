@@ -90,39 +90,22 @@ export const getPostsFeedController = async (req: AuthenticatedRequest, res: Res
 
     // // Assuming you have a service to get the posts feed
     // const postsFeed = await getPostsFeed(email, token);
+    const postsFeed: FeedPost[] = Array.from({ length: 10 }).map((_, i) => ({
+      id: (i + 1).toString(),
+      user_id: 'user' + (i + 1),
+      content: `Post de prueba ${i + 1}`,
+      file_url: `https://dummyimage.com/600x400/${i % 2 === 0 ? '000/fff' : '111/eee'}`,
+      file_size: 10000 + i * 1000,
+      media_type: i % 2 === 0 ? 1 : 2,
+      is_active: true,
+      is_edited: false,
+      status: 0,
+      created_at: new Date(validatedBody.date),
+      updated_at: new Date(validatedBody.date),
+      username: `usuario${i + 1}`,
+      profile_picture_url: `https://dummyimage.com/100x100/${i % 2 === 0 ? '000/fff' : '111/eee'}`,
+    }));
 
-const postsFeed: FeedPost[] = [
-      {
-        id: '1',
-        user_id: 'user-uuid',
-        content: 'Post de prueba 1',
-        file_url: 'https://dummyimage.com/600x400/000/fff',
-        file_size: 12345,
-        media_type: 1,
-        is_active: true,
-        is_edited: false,
-        status: 0,
-        created_at: new Date(validatedBody.date),
-        updated_at: new Date(validatedBody.date),
-        username: 'usuario1',
-        profile_picture_url: 'https://dummyimage.com/100x100/000/fff',
-      },
-      {
-        id: '2',
-        user_id: 'user-uuid',
-        content: 'Post de prueba 2',
-        file_url: 'https://dummyimage.com/600x400/111/eee',
-        file_size: 54321,
-        media_type: 2,
-        is_active: true,
-        is_edited: false,
-        status: 0,
-        created_at: new Date(validatedBody.date),
-        updated_at: new Date(validatedBody.date),
-        username: 'usuario2',
-        profile_picture_url: 'https://dummyimage.com/100x100/111/eee',
-      },
-    ];
 
     res.status(200).json({
       message: 'Posts feed retrieved successfully',
