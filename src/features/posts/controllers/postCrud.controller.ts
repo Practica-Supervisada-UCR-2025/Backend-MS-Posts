@@ -1,10 +1,11 @@
 import e, { NextFunction, Response } from 'express';
 import { createPost } from '../services/postCrud.service';
 import * as yup from 'yup';
+import { FeedPost } from '../interfaces/posts.entities.interface';
 import { AuthenticatedRequest } from '../../middleware/authenticate.middleware';
 import { BadRequestError } from '../../../utils/errors/api-error';
 import multer from 'multer';
-import { createPostSchema, CreatePostsDTO } from '../dto/postCrud.dto';
+import { createPostSchema, CreatePostsDTO, getFeedPostsSchema, GetFeedPostsDTO } from '../dto/postCrud.dto';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -74,5 +75,60 @@ export const createPostController = async (req: AuthenticatedRequest, res: Respo
     } else {
       next(error);
     }
+  }
+}
+
+export const getPostsFeedController = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const token = (req as any).token;
+    const email = req.user.email;
+
+    const validatedBody = await getFeedPostsSchema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true,
+    }) as GetFeedPostsDTO;
+
+    // // Assuming you have a service to get the posts feed
+    // const postsFeed = await getPostsFeed(email, token);
+
+const postsFeed: FeedPost[] = [
+      {
+        id: '1',
+        user_id: 'user-uuid',
+        content: 'Post de prueba 1',
+        file_url: 'https://dummyimage.com/600x400/000/fff',
+        file_size: 12345,
+        media_type: 1,
+        is_active: true,
+        is_edited: false,
+        status: 0,
+        created_at: new Date(validatedBody.date),
+        updated_at: new Date(validatedBody.date),
+        username: 'usuario1',
+        profile_picture_url: 'https://dummyimage.com/100x100/000/fff',
+      },
+      {
+        id: '2',
+        user_id: 'user-uuid',
+        content: 'Post de prueba 2',
+        file_url: 'https://dummyimage.com/600x400/111/eee',
+        file_size: 54321,
+        media_type: 2,
+        is_active: true,
+        is_edited: false,
+        status: 0,
+        created_at: new Date(validatedBody.date),
+        updated_at: new Date(validatedBody.date),
+        username: 'usuario2',
+        profile_picture_url: 'https://dummyimage.com/100x100/111/eee',
+      },
+    ];
+
+    res.status(200).json({
+      message: 'Posts feed retrieved successfully',
+      posts: postsFeed,
+    });
+  } catch (error) {
+    next(error);
   }
 }
