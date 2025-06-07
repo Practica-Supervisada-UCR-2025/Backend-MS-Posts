@@ -8,7 +8,7 @@ jest.mock('../../src/features/posts/controllers/commentCrud.controller');
 
 import { authenticateJWT } from '../../src/features/middleware/authenticate.middleware';
 import { getPostCommentsController } from '../../src/features/posts/controllers/commentCrud.controller';
-import commentRoutes from '../../src/features/posts/routes/post.routes';
+import commentRoutes from '../../src/features/posts/routes/comment.routes';
 
 const app = express();
 app.use(express.json());

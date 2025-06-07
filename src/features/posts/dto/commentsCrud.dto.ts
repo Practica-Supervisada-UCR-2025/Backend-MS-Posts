@@ -8,15 +8,14 @@ export const createCommentSchema = yup.object({
 
   content: yup
     .string()
-    .required('content is required')
-    .min(1, 'Content must be at least 1 character long')
+    .nullable()
     .max(300, 'Content must not exceed 300 characters'),
 
   mediaType: yup
     .number()
     .transform((value, originalValue) => originalValue === "" ? null : value)
-    .nullable(),
-
+    .nullable()
+    .oneOf([0, 1, 2, null], 'mediaType must be 0, 1 or 2'),
   file: yup
     .mixed()
     .nullable(),
@@ -25,33 +24,6 @@ export const createCommentSchema = yup.object({
     .string()
     .nullable(),
 })
-.test(
-  'at-least-content-or-file',
-  'At least one of content or file is required.',
-  (value) => {
-    return (value.content && value.content.length > 0) || !!value.file;
-  }
-)
-.test(
-  'file-required-if-mediatype',
-  'If mediaType is 0 or 1, file is required.',
-  (value) => {
-    if (value.mediaType === 0 || value.mediaType === 1) {
-      return !!value.file;
-    }
-    return true;
-  }
-)
-.test(
-  'mediatype-required-if-file',
-  'If file is present, mediaType must be 0 or 1.',
-  (value) => {
-    if (value.file) {
-      return value.mediaType === 0 || value.mediaType === 1;
-    }
-    return true;
-  }
-)
 .test(
   'gifurl-not-allowed-if-mediatype-not-2',
   'gifUrl is only allowed if mediaType is 2.',
@@ -90,4 +62,4 @@ export const getPostCommentsSchema = yup.object({
 });
 
 export type GetPostCommentsDTO = yup.InferType<typeof getPostCommentsSchema>;
-
+export type CreateCommentDTO = yup.InferType<typeof createCommentSchema>;

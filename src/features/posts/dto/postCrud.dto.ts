@@ -32,18 +32,10 @@ export const createPostSchema = yup.object({
 );
 
 export const getFeedPostsSchema = yup.object({
-  page: yup
-    .number()
-    .integer('The page must be an integer')
-    .min(1, 'The page must be at least 1')
-    .default(1),
-
   limit: yup
     .number()
     .integer('The limit must be an integer')
     .min(1, 'The limit must be at least 1')
-    .max(5, 'The limit must not exceed 5')
-
     .max(10, 'The limit must not exceed 5')
     .default(10),
   date: yup
