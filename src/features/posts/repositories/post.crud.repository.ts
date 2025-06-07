@@ -27,7 +27,7 @@ export const createPostDB = async (post: Partial<Post>) => {
 
 export const findFeedPosts = async (date: Date, limit: number) => {
   const query = `
-    SELECT posts.*, users.username, users.profile_picture
+    SELECT posts.id, posts.user_id, posts.content, posts.file_url, posts.created_at, posts.media_type, users.username, users.profile_picture
     FROM posts
     JOIN users ON posts.user_id = users.id
     WHERE posts.created_at < $1 AND posts.is_active = true AND posts.status = 1
