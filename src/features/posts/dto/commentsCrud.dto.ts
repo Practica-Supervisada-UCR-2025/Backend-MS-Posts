@@ -8,14 +8,14 @@ export const createCommentSchema = yup.object({
 
   content: yup
     .string()
-    .required('content is required')
-    .min(1, 'Content must be at least 1 character long')
+    .nullable()
     .max(300, 'Content must not exceed 300 characters'),
 
   mediaType: yup
     .number()
     .transform((value, originalValue) => originalValue === "" ? null : value)
-    .nullable(),
+    .nullable()
+    .oneOf([0, 1, 2, null], 'mediaType must be 0, 1 or 2'),
 
   file: yup
     .mixed()
@@ -90,4 +90,4 @@ export const getPostCommentsSchema = yup.object({
 });
 
 export type GetPostCommentsDTO = yup.InferType<typeof getPostCommentsSchema>;
-
+export type CreateCommentDTO = yup.InferType<typeof createCommentSchema>;

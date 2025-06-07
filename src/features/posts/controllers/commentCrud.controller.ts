@@ -1,16 +1,19 @@
 import { Response, NextFunction } from 'express';
 import * as yup from 'yup';
 import { AuthenticatedRequest } from '../../middleware/authenticate.middleware';
+
 import {BadRequestError, UnauthorizedError} from '../../../utils/errors/api-error';
 import { createCommentSchema } from '../dto/commentsCrud.dto';
 import { getPostCommentsSchema, GetPostCommentsDTO } from '../dto/commentsCrud.dto';
 import { getPostComments } from '../services/commentCrud.service';
 
-export const createCommentDummyController = async (
+export const createCommentController = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
+
+  console.log('Body:', req.body);
   try {
     const validatedBody = await createCommentSchema.validate(req.body, {
       abortEarly: false,

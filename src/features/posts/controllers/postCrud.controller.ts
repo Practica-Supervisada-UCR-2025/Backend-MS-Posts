@@ -90,6 +90,7 @@ export const getPostsFeedController = async (req: AuthenticatedRequest, res: Res
 
     // // Assuming you have a service to get the posts feed
     // const postsFeed = await getPostsFeed(email, token);
+
     const postsFeed: FeedPost[] = Array.from({ length: 10 }).map((_, i) => ({
       id: (i + 1).toString(),
       user_id: 'user' + (i + 1),
@@ -105,7 +106,6 @@ export const getPostsFeedController = async (req: AuthenticatedRequest, res: Res
       username: `usuario${i + 1}`,
       profile_picture_url: `https://dummyimage.com/100x100/${i % 2 === 0 ? '000/fff' : '111/eee'}`,
     }));
-
 
     res.status(200).json({
       message: 'Posts feed retrieved successfully',
