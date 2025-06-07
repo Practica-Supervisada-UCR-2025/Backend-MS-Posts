@@ -4,7 +4,6 @@ import { getUserPostsController, getPostsByUserIdController } from '../controlle
 import { deleteOwnPostController } from '../controllers/post.controller';
 import { getReportedPostsController } from "../controllers/reportedPosts.controller";
 import { createPostController, getPostsFeedController } from '../controllers/postCrud.controller';
-import {getPostCommentsController} from "../controllers/commentCrud.controller";
 
 const router = Router();
 
@@ -18,20 +17,15 @@ router.get('/posts/user/:uuid', authenticateJWT, getPostsByUserIdController as R
 // Get all reported posts route (protected by JWT)
 router.get('/posts/reported', authenticateJWT, getReportedPostsController as RequestHandler);
 
+// Get posts feed route (protected by JWT)
+router.get('/posts/feed', authenticateJWT, getPostsFeedController as RequestHandler)
+
 // DELETE
 // Delete own post route (protected by JWT)
 router.delete('/user/posts/delete/:postId', authenticateJWT, deleteOwnPostController as unknown as RequestHandler);
 
 // POST
 // Create a new post (protected by JWT)
-router.post('/posts/newPost', authenticateJWT, createPostController as RequestHandler);
-
-// Get posts feed route (protected by JWT)
-router.get('/posts/feed', authenticateJWT, getPostsFeedController as RequestHandler);
-
-// Create a new comment on a post (protected by JWT)
-router.post('/posts/newCommment', authenticateJWT, createPostController as RequestHandler);
-
-router.get('/posts/:postId/comments', authenticateJWT, getPostCommentsController as RequestHandler);
+router.post('/posts/newPost', authenticateJWT, createPostController as RequestHandler);;
 
 export default router;
