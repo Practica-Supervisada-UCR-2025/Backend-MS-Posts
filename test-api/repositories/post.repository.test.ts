@@ -1,5 +1,10 @@
 // Import necessary modules
-import { findPostById, deleteOwnPostRepository } from '../../src/features/posts/repositories/post.repository.ts';
+import {
+  findPostById,
+  deleteOwnPostRepository,
+} from '../../src/features/posts/repositories/post.repository.ts';
+
+import { findFeedPosts, getTotalVisiblePosts } from '../../src/features/posts/repositories/post.crud.repository.ts';
 import client from '../../src/config/database';
 
 jest.mock('../../src/config/database', () => ({
@@ -52,4 +57,61 @@ describe('Post Repository', () => {
       );
     });
   });
+
+  describe('findFeedPosts', () => {
+    it('should return posts feed with user info', async () => {
+      const date = new Date();
+      const limit = 10;
+      const sampleRows = [
+        {
+          id: '1',
+          content: 'Post 1',
+          username: 'user1',
+          profile_picture: 'pic1.png',
+        },
+        {
+          id: '2',
+          content: 'Post 2',
+          username: 'user2',
+          profile_picture: 'pic2.png',
+        },
+      ];
+      mockClient.query.mockResolvedValueOnce({ rows: sampleRows });
+
+      const result = await findFeedPosts(date, limit);
+
+      expect(result).toEqual(sampleRows);
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'SELECT posts.*, users.username, users.profile_picture'
+        ),
+        [date, limit]
+      );
+    });
+  });
+
+  describe('getTotalVisiblePosts', () => {
+    it('should return the total number of visible posts', async () => {
+      const date = new Date();
+      mockClient.query.mockResolvedValueOnce({ rows: [{ total: '5' }] });
+
+      const result = await getTotalVisiblePosts(date);
+
+      expect(result).toBe('5');
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT COUNT(*) AS total'),
+        [date]
+      );
+    });
+
+    it('should return 0 if no rows are returned', async () => {
+      const date = new Date();
+      mockClient.query.mockResolvedValueOnce({ rows: [] });
+
+      const result = await getTotalVisiblePosts(date);
+
+      expect(result).toBe(0);
+    });
+  });
 });
+

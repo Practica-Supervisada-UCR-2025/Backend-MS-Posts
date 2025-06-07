@@ -1,3 +1,4 @@
+import { number } from 'yup';
 import client from '../../../config/database';
 import { Post } from '../interfaces/posts.entities.interface';
 
@@ -23,3 +24,29 @@ export const createPostDB = async (post: Partial<Post>) => {
   const res = await client.query(query, values);
   return res.rows[0];
 }
+
+export const findFeedPosts = async (date: Date, limit: number) => {
+  const query = `
+    SELECT posts.*, users.username, users.profile_picture
+    FROM posts
+    JOIN users ON posts.user_id = users.id
+    WHERE posts.created_at < $1 AND posts.is_active = true AND posts.status = 1
+    ORDER BY posts.created_at DESC
+    LIMIT $2;
+  `;
+  const values = [date, limit];
+  const res = await client.query(query, values);
+  return res.rows;
+}
+
+// Add function to fetch total visible posts
+export const getTotalVisiblePosts = async (date: Date) => {
+  const query = `
+    SELECT COUNT(*) AS total
+    FROM posts
+    WHERE posts.created_at < $1 AND posts.is_active = true AND posts.status = 1;
+  `;
+  const values = [date];
+  const res = await client.query(query, values);
+  return res.rows[0]?.total || 0;
+};
