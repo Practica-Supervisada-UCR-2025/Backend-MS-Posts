@@ -21,4 +21,13 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface PaginatedTimeResponse<T> {
+  message: string;
+  data: T[];
+  metadata: {
+    remainingItems: number;
+    remainingPages: number;
+  };
+}
+
 export interface Post extends BasePost {}

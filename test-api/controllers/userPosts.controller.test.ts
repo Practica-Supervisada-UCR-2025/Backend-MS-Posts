@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express, { ErrorRequestHandler } from 'express';
-import { getUserPostsController } from '../../src/features/posts/controllers/getPosts.controller';
+import { getUserPostsController, getPostsByUserIdController } from '../../src/features/posts/controllers/getPosts.controller';
 import { errorHandler } from '../../src/utils/errors/error-handler.middleware';
 import userPostsRoutes from '../../src/features/posts/routes/post.routes';
 
@@ -95,6 +95,106 @@ describe('UserPosts Controller Integration Tests', () => {
         message: 'Validation error',
         details: expect.any(Array),
       });
+    });
+  });
+
+  describe('GET /api/posts/user/:uuid', () => {
+    const otherUserUuid = '550e8400-e29b-41d4-a716-446655440000';
+  
+    const mockTimeBasedPosts = {
+      message: 'Posts fetched successfully',
+      data: [
+        {
+          id: '1',
+          user_id: otherUserUuid,
+          content: 'Test post',
+          file_url: 'https://example.com/file.jpg',
+          media_type: 1,
+          created_at: '2025-05-01T12:00:00.000Z',
+        },
+      ],
+      metadata: {
+        remainingItems: 2,
+        remainingPages: 1,
+      },
+    };
+
+    it('should return posts for a specific user by UUID', async () => {
+      // Mock the service
+      (userPostsService.getPostsByUserId as jest.Mock).mockResolvedValueOnce(mockTimeBasedPosts);
+
+      const timestamp = '2025-06-07T12:00:00.000Z'; // Current date
+      const limit = 10;      
+      const response = await request(app)
+        .get(`/posts/user/${otherUserUuid}`)
+        .set('Authorization', 'Bearer valid-token')
+        .query({ limit: limit, time: timestamp })
+        .send()
+        .expect(200);
+
+      expect(response.body).toEqual(mockTimeBasedPosts);
+      expect(userPostsService.getPostsByUserId).toHaveBeenCalledWith('550e8400-e29b-41d4-a716-446655440000', limit, timestamp);
+    });
+
+    it('should return 401 when the user is not authenticated', async () => {
+      const timestamp = '2025-06-07T12:00:00.000Z';
+      const limit = 10;
+
+      const response = await request(app)
+        .get(`/posts/user/${otherUserUuid}`)
+        .query({ limit: limit, time: timestamp })
+        .expect(401);
+
+      expect(response.body).toEqual({
+        message: 'Unauthorized',
+      });
+    });
+
+    it('should return 400 for invalid UUID in path parameter', async () => {
+      const timestamp = '2025-06-07T12:00:00.000Z';
+      const limit = 10;
+
+      const response = await request(app)
+        .get('/posts/user/invalid-uuid')
+        .set('Authorization', 'Bearer valid-token')
+        .query({ limit: limit, time: timestamp })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        message: 'Validation error',
+        details: expect.any(Array),
+      });
+    });
+
+    it('should return 400 for invalid query parameters', async () => {
+      const response = await request(app)
+        .get(`/posts/user/${otherUserUuid}`)
+        .set('Authorization', 'Bearer valid-token')
+        .query({ limit: 'invalid', time: 'invalid-timestamp' })
+        .expect(400);
+
+      expect(response.body).toEqual({
+        message: 'Validation error',
+        details: expect.any(Array),
+      });
+    });
+
+    it('should handle service errors appropriately', async () => {
+      const timestamp = '2025-06-07T12:00:00.000Z';
+      const limit = 10;
+        // Mock the service to throw an error
+      const { InternalServerError } = require('../../src/utils/errors/api-error');
+      (userPostsService.getPostsByUserId as jest.Mock).mockRejectedValueOnce(
+        new InternalServerError('Failed to fetch posts')
+      );
+      
+      const response = await request(app)
+        .get(`/posts/user/${otherUserUuid}`)
+        .set('Authorization', 'Bearer valid-token')
+        .query({ limit: limit, time: timestamp })
+        .expect(500);
+
+      expect(response.body).toHaveProperty('message');
     });
   });
 });
