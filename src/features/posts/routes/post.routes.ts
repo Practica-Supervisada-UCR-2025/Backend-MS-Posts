@@ -4,6 +4,7 @@ import { getUserPostsController } from '../controllers/getPosts.controller';
 import { deleteOwnPostController } from '../controllers/post.controller';
 import { getReportedPostsController } from "../controllers/reportedPosts.controller";
 import { createPostController, getPostsFeedController } from '../controllers/postCrud.controller';
+import {getPostCommentsController} from "../controllers/commentCrud.controller";
 
 const router = Router();
 
@@ -24,5 +25,7 @@ router.get('/posts/feed', authenticateJWT, getPostsFeedController as RequestHand
 
 // Create a new comment on a post (protected by JWT)
 router.post('/posts/newCommment', authenticateJWT, createPostController as RequestHandler);
+
+router.get('/posts/:postId/comments', authenticateJWT, getPostCommentsController as RequestHandler);
 
 export default router;

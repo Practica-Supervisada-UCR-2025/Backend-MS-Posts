@@ -72,3 +72,22 @@ export const createCommentSchema = yup.object({
     return true;
   }
 );
+
+export const getPostCommentsSchema = yup.object({
+    index: yup
+        .number()
+        .transform((value, original) =>
+            typeof original === 'string' && original.trim() !== ''
+                ? parseInt(original, 10)
+                : value
+        )
+        .min(0, 'index must be greater or equal 0')
+        .default(0),
+    startTime: yup
+        .date()
+        .typeError('startTime must be a valid date')
+        .required('startTime is required'),
+});
+
+export type GetPostCommentsDTO = yup.InferType<typeof getPostCommentsSchema>;
+
