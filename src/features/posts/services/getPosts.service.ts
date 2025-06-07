@@ -85,7 +85,7 @@ export const getPostsByUserId = async (
 
     const remainingPages = Math.ceil(remainingItems / limit);
 
-
+    
     return {
       message: 'Posts fetched successfully',
       data,
