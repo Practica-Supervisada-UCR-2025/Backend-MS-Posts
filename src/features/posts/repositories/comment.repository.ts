@@ -36,3 +36,27 @@ export const countCommentsByPostId = async (
     );
     return parseInt(result.rows[0].count, 10);
 };
+
+export const createCommentDB = async (comment: Partial<any>) => {
+    const query = `
+        INSERT INTO comments (
+            id, content, user_id, post_id, file_url, file_size, media_type, is_active, is_edited, status, created_at, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+        RETURNING *;
+    `;
+    const values = [
+        comment.id,
+        comment.content,
+        comment.user_id,
+        comment.post_id,
+        comment.file_url ?? null,
+        comment.file_size ?? null,
+        comment.media_type ?? null,
+        comment.is_active ?? true,
+        comment.is_edited ?? false,
+        comment.status ?? 0,
+    ];
+    const res = await client.query(query, values);
+    return res.rows[0];
+};
