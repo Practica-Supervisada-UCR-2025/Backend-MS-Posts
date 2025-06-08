@@ -75,3 +75,28 @@ export const getTotalVisiblePostsByUserIdAndTime = async (user_id: string, times
 
   return parseInt(countResult.rows[0].count, 10);
 };
+
+export const getPostByIdWithDetails = async (postId: string) => {
+  const query = `
+    SELECT 
+      p.id,
+      p.user_id,
+      p.content,
+      p.file_url,
+      p.file_size,
+      p.media_type,
+      p.created_at,
+      p.updated_at,
+      u.username,
+      u.email,
+      (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS total_comments,
+      COALESCE((SELECT COUNT(*) FROM reports r WHERE r.reported_content_id = p.id AND r.status = 1), 0) AS active_reports,
+      COALESCE((SELECT COUNT(*) FROM reports r WHERE r.reported_content_id = p.id), 0) AS total_reports
+    FROM posts p
+    JOIN users u ON p.user_id = u.id
+    WHERE p.id = $1 AND p.is_active = true
+  `;
+  
+  const result = await client.query(query, [postId]);
+  return result.rows.length > 0 ? result.rows[0] : null;
+};

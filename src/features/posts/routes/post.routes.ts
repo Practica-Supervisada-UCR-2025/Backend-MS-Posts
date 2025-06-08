@@ -1,6 +1,6 @@
 import { Router ,RequestHandler} from 'express';
 import { authenticateJWT } from '../../middleware/authenticate.middleware';
-import { getUserPostsController, getPostsByUserIdController } from '../controllers/getPosts.controller';
+import { getUserPostsController, getPostsByUserIdController, getPostByIdController } from '../controllers/getPosts.controller';
 import { deleteOwnPostController } from '../controllers/post.controller';
 import { getReportedPostsController } from "../controllers/reportedPosts.controller";
 import { createPostController, getPostsFeedController } from '../controllers/postCrud.controller';
@@ -33,5 +33,8 @@ router.get('/posts/feed', authenticateJWT, getPostsFeedController as RequestHand
 router.post('/posts/newCommment', authenticateJWT, createPostController as RequestHandler);
 
 router.get('/posts/:postId/comments', authenticateJWT, getPostCommentsController as RequestHandler);
+
+// Get post by ID route (protected by JWT)
+router.get('/user/posts/:postId', authenticateJWT, getPostByIdController as RequestHandler);
 
 export default router;

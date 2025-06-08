@@ -5,7 +5,7 @@ import postRoutes from './features/posts/routes/post.routes';
 import reportedPostsRoutes from './features/posts/routes/reportedPosts.routes';
 
 export const app = express();
-const PORT = 3000;
+const PORT = 3003;
 
 app.get('/', (req, res) => {
     res.send('Server is running on port 3000');

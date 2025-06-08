@@ -2,11 +2,13 @@ import {
   getTotalVisiblePostsByUserId, 
   getVisiblePostsByUserIdPaginated,
   getVisiblePostsByUserIdAndTime,
-  getTotalVisiblePostsByUserIdAndTime
+  getTotalVisiblePostsByUserIdAndTime,
+  getPostByIdWithDetails
 } from '../repositories/getPosts.repository';
 import { InternalServerError, NotFoundError } from '../../../utils/errors/api-error';
 import { PaginatedResponse, BasePost, PaginatedTimeResponse } from '../interfaces/posts.entities.interface';
-
+import { getPostComments } from './commentCrud.service';
+import { GetPostByIdDTO } from '../dto/getPostById.dto';
 
 /**
  * Fetches paginated posts for a user by their email.
@@ -98,4 +100,33 @@ export const getPostsByUserId = async (
     }
     throw new InternalServerError('Failed to fetch posts');
   }
+};
+
+export const getPostById = async (postId: string, params: GetPostByIdDTO) => {
+  // First check if the post exists
+  const post = await getPostByIdWithDetails(postId);
+  
+  if (!post) {
+    throw new NotFoundError('Post not found');
+  }
+  
+  // Get comments for the post with pagination
+  const commentsResult = await getPostComments(postId, {
+    index: params.commentPage - 1, // Convert page to index (0-based)
+    startTime: new Date("2025-01-01") // started date 
+  });
+  
+  // Return combined data
+  return {
+    message: 'Post fetched successfully',
+    post: {
+      ...post,
+      comments: commentsResult.comments,
+      comments_metadata: {
+        totalItems: commentsResult.metadata.totalItems,
+        totalPages: Math.ceil(commentsResult.metadata.totalItems / 5),
+        currentPage: params.commentPage
+      }
+    }
+  };
 };
