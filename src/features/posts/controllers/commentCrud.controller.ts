@@ -5,7 +5,7 @@ import { AuthenticatedRequest } from '../../middleware/authenticate.middleware';
 import {BadRequestError, UnauthorizedError} from '../../../utils/errors/api-error';
 import { createCommentSchema } from '../dto/commentsCrud.dto';
 import { getPostCommentsSchema, GetPostCommentsDTO } from '../dto/commentsCrud.dto';
-import { getPostComments } from '../services/commentCrud.service';
+import { getPostComments, createComment } from '../services/commentCrud.service';
 import multer from 'multer';
 
 const upload = multer({
@@ -66,13 +66,18 @@ export const createCommentController = async (
       throw new BadRequestError('If file is present, mediaType must be 0 or 1.');
     }
 
+    const token = (req as any).token;
+    const email = req.user.email;
+
+    const createdComment =  await createComment(email, token, validatedBody, file)
+
     res.status(201).json({
       message: 'Comentario recibido correctamente',
-      comment: validatedBody,
+      comment: createdComment,
     });
   } catch (error) {
     if (error instanceof yup.ValidationError) {
-      next(new BadRequestError('Validation error', error.errors));
+      next(new BadRequestError(error.errors.join(', ')));
     } else {
       next(error);
     }
