@@ -25,6 +25,29 @@ export const getVisiblePostsByUserIdPaginated = async (user_id: string, offset: 
 };
 
 /**
+ * Retrieves paginated visible posts for a user by their user ID, filtered by creation time.
+ * Only returns posts created before the provided timestamp.
+ *
+ * @param user_id - The UUID of the user whose posts are being fetched.
+ * @param timestamp - The ISO timestamp to filter posts (returns posts created before this time).
+ * @param limit - The maximum number of rows to return (for pagination).
+ * @returns An array of post objects if found, otherwise an empty array.
+ * @throws Any error thrown by the database client.
+ */
+export const getVisiblePostsByUserIdAndTime = async (user_id: string, timestamp: string, limit: number) => {
+  const postQuery = `
+    SELECT id, user_id, content, file_url, media_type, created_at FROM posts 
+    WHERE user_id = $1 AND status = 1 AND is_active = true AND created_at < $2
+    ORDER BY created_at DESC 
+    LIMIT $3
+  `;
+
+  const postResult: QueryResult = await client.query(postQuery, [user_id, timestamp, limit]);
+
+  return postResult.rows.length > 0 ? postResult.rows : [];
+};
+
+/**
  * Retrieves the total number of visible posts for a user by their user ID.
  *
  * @param user_id - The UUID of the user whose post count is being fetched.
@@ -36,4 +59,44 @@ export const getTotalVisiblePostsByUserId = async (user_id: string) => {
   const countResult: QueryResult = await client.query(countQuery, [user_id, 1]);
 
   return parseInt(countResult.rows[0].count, 10);
+};
+
+/**
+ * Retrieves the total number of visible posts for a user by their user ID, created before a specific time.
+ *
+ * @param user_id - The UUID of the user whose post count is being fetched.
+ * @param timestamp - The ISO timestamp to filter posts (counts posts created before this time).
+ * @returns The total count of visible posts for the user as a number.
+ * @throws Any error thrown by the database client.
+ */
+export const getTotalVisiblePostsByUserIdAndTime = async (user_id: string, timestamp: string) => {
+  const countQuery = 'SELECT COUNT(*) FROM posts WHERE user_id = $1 AND status = $2 AND is_active = true AND created_at < $3';
+  const countResult: QueryResult = await client.query(countQuery, [user_id, 1, timestamp]);
+
+  return parseInt(countResult.rows[0].count, 10);
+};
+
+export const getPostByIdWithDetails = async (postId: string) => {
+  const query = `
+    SELECT 
+      p.id,
+      p.user_id,
+      p.content,
+      p.file_url,
+      p.file_size,
+      p.media_type,
+      p.created_at,
+      p.updated_at,
+      u.username,
+      u.email,
+      (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS total_comments,
+      COALESCE((SELECT COUNT(*) FROM reports r WHERE r.reported_content_id = p.id AND r.status = 1), 0) AS active_reports,
+      COALESCE((SELECT COUNT(*) FROM reports r WHERE r.reported_content_id = p.id), 0) AS total_reports
+    FROM posts p
+    JOIN users u ON p.user_id = u.id
+    WHERE p.id = $1 AND p.is_active = true
+  `;
+  
+  const result = await client.query(query, [postId]);
+  return result.rows.length > 0 ? result.rows[0] : null;
 };

@@ -3,9 +3,10 @@ import { errorHandler } from './utils/errors/error-handler.middleware';
 import cors from "cors";
 import postRoutes from './features/posts/routes/post.routes';
 import reportedPostsRoutes from './features/posts/routes/reportedPosts.routes';
+import commentRoutes from './features/posts/routes/comment.routes';
 
 export const app = express();
-const PORT = 3000;
+const PORT = 3003;
 
 app.get('/', (req, res) => {
     res.send('Server is running on port 3000');
@@ -16,6 +17,7 @@ app.use(cors());
 // Add the user posts routes
 app.use('/api', postRoutes);
 app.use('/api', reportedPostsRoutes);
+app.use('/api', commentRoutes);
 
 // Error handling middleware should be last
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
