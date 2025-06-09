@@ -1,14 +1,19 @@
 import { NextFunction, Request, Response, RequestHandler } from 'express';
-import { getUserPosts, getPostsByUserId } from '../services/getPosts.service';
+import { getUserPosts, getPostsByUserId, getPostById } from '../services/getPosts.service';
 import * as yup from 'yup';
 import { AuthenticatedRequest } from '../../middleware/authenticate.middleware';
 import { BadRequestError, UnauthorizedError } from '../../../utils/errors/api-error';
-import { 
-  getUserPostsSchema, 
-  GetUserPostsDTO, 
-  getOtherUserPostsSchema, 
-  GetOtherUserPostsDTO 
+import {
+  getUserPostsSchema,
+  GetUserPostsDTO,
+  getOtherUserPostsSchema,
+  GetOtherUserPostsDTO
 } from '../dto/getUserPosts.dto';
+
+import {
+  getPostByIdSchema,
+  GetPostByIdDTO
+} from '../dto/getPostById.dto';
 
 /**
  * Controller to handle fetching paginated posts for the authenticated user.
@@ -85,7 +90,7 @@ export const getPostsByUserIdController = async (
 
     // Call service function (you'll need to create or modify the appropriate service)
     const posts = await getPostsByUserId(uuid, limit, time);
-    
+
     res.status(200).json(posts);
   } catch (error) {
     if (error instanceof yup.ValidationError) {
@@ -96,3 +101,33 @@ export const getPostsByUserIdController = async (
   }
 };
 
+export const getPostByIdController = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Check if the user is authorized
+    if (req.user.role !== 'user') {
+      throw new UnauthorizedError('User not authenticated');
+    }
+    const postId = req.params.postId;
+
+    // Validate the query parameters
+    const validatedQuery = await getPostByIdSchema.validate(req.query, {
+      abortEarly: false,
+      stripUnknown: true,
+    }) as GetPostByIdDTO;
+
+    // Get the post with details
+    const result = await getPostById(postId, validatedQuery);
+    
+    res.status(200).json(result);
+  } catch (error) {
+    if (error instanceof yup.ValidationError) {
+      next(new BadRequestError('Validation error', error.errors));
+    } else {
+      next(error);
+    }
+  }
+};
