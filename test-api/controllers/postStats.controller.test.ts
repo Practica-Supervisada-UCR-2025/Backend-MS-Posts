@@ -67,6 +67,22 @@ describe('GET /posts/stats/total → postStatsController', () => {
     });
   });
 
+  // it('returns 500 if the service throws an error', async () => {
+  // (postStatsService.getTotalPostsStatsService as jest.Mock).mockRejectedValueOnce(new Error('Unexpected error'));
+
+  // const res = await request(app)
+  //   .get('/posts/stats/total')
+  //   .set('Authorization', 'Bearer valid-token')
+  //   .query({
+  //     start_date: '01-06-2025',
+  //     end_date: '14-06-2025',
+  //     period: 'weekly',
+  //   })
+  //   .expect(500);
+
+  // expect(res.body.message).toBe('Internal Server Error');
+  // });
+
   it('returns 400 when date format is invalid', async () => {
     const res = await request(app)
       .get('/posts/stats/total')
