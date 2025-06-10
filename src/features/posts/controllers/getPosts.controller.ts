@@ -108,7 +108,7 @@ export const getPostByIdController = async (
 ) => {
   try {
     // Check if the user is authorized
-    if (req.user.role !== 'user') {
+    if (req.user.role !== 'admin') {
       throw new UnauthorizedError('User not authenticated');
     }
     const postId = req.params.postId;
