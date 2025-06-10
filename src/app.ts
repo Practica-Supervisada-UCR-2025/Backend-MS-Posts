@@ -6,9 +6,9 @@ require("appdynamics").profile({
  controllerSslEnabled: true,
  accountName: process.env.APP_DYNAMICS_ACCOUNT_NAME,
  accountAccessKey: process.env.APP_DYNAMICS_KEY,
- applicationName: 'Backend-posts-app',
- tierName: 'Backend-posts-tier',
- nodeName: 'process' // The controller will automatically append the node name with a unique number
+ applicationName: 'Backend-user-app',
+ tierName: 'Data',
+ nodeName: 'Posts-node' // The controller will automatically append the node name with a unique number
 });
 import express, { Request, Response, NextFunction } from 'express';
 import { errorHandler } from './utils/errors/error-handler.middleware';
