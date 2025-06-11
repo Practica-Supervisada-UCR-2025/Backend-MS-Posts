@@ -4,6 +4,7 @@ import { getUserPostsController, getPostsByUserIdController, getPostByIdControll
 import { deleteOwnPostController } from '../controllers/post.controller';
 import { getReportedPostsController } from "../controllers/reportedPosts.controller";
 import { createPostController, getPostsFeedController } from '../controllers/postCrud.controller';
+import { getTotalPostsStatsController } from '../controllers/postStats.controller';
 
 const router = Router();
 
@@ -30,5 +31,9 @@ router.post('/posts/newPost', authenticateJWT, createPostController as RequestHa
 
 // Get post by ID route (protected by JWT)
 router.get('/user/posts/:postId', authenticateJWT, getPostByIdController as RequestHandler);
+
+// Get total posts stats grouped by period (protected by JWT)
+router.get('/posts/stats/total', authenticateJWT, getTotalPostsStatsController as RequestHandler);
+
 
 export default router;
