@@ -83,7 +83,7 @@ describe('Post Repository', () => {
       expect(result).toEqual(sampleRows);
       expect(mockClient.query).toHaveBeenCalledWith(
         expect.stringContaining(
-          'SELECT posts.*, users.username, users.profile_picture'
+          'SELECT posts.id, posts.user_id, posts.content, posts.file_url, posts.created_at, posts.media_type, users.username, users.profile_picture'
         ),
         [date, limit]
       );
