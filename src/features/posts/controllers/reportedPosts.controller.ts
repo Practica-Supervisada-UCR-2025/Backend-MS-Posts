@@ -1,5 +1,5 @@
 import { NextFunction, Response } from 'express';
-import { getReportedPosts, deleteReportedPost, restoreReportedPost, reportPost } from '../services/reportedPosts.service';
+import { getReportedPosts, deleteReportedPost, restoreReportedPost } from '../services/reportedPosts.service';
 import * as yup from 'yup';
 import { AuthenticatedRequest } from '../../../features/middleware/authenticate.middleware';
 import { BadRequestError, UnauthorizedError } from '../../../utils/errors/api-error';
@@ -167,47 +167,6 @@ export const restoreReportedPostController = async (
       return res.status(400).json({
         success: false,
         message: 'Validation error'
-      });
-    }
-    return next(error);
-  }
-};
-
-/**
- * Controller for reporting a post.
- *
- * @param req - Express request object with user authentication
- * @param res - Express response object
- * @param next - Express next middleware function
- * @returns Sends JSON response with a message indicating the operation result
- * @throws ValidationError If request body validation fails
- * @throws Any other error is forwarded to the error-handling middleware
- */
-export const reportPostController = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { postId, reason, reportedBy } = req.body;
-
-    // Validate the request body
-    const validatedData = await reportPostSchema.validate(req.body, {
-        abortEarly: false,
-        stripUnknown: true,
-    });
-
-    // Call the service method to report the post
-    const result = await reportPost(validatedData);
-
-    return res.status(200).json({
-      message: result.message,
-    });
-  } catch (error) {
-    if (error instanceof yup.ValidationError) {
-      return res.status(400).json({
-        message: 'Validation error',
-        errors: error.errors,
       });
     }
     return next(error);

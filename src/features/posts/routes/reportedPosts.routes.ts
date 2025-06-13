@@ -1,6 +1,6 @@
 import { Router, RequestHandler } from 'express';
 import { getUserPostsController } from '../controllers/getPosts.controller';
-import { deleteReportedPostController, restoreReportedPostController, reportPostController } from '../controllers/reportedPosts.controller';
+import { deleteReportedPostController, restoreReportedPostController } from '../controllers/reportedPosts.controller';
 import { authenticateJWT } from '../../middleware/authenticate.middleware';
 
 const router = Router();
@@ -22,12 +22,5 @@ router.post('/admin/reported/delete', authenticateJWT, deleteReportedPostControl
  * @middleware restoreReportedPostController - Handles the restoration request
  */
 router.post('/admin/reported/restore', authenticateJWT, restoreReportedPostController as RequestHandler);
-/**
- * @route POST /posts/report
- * @description Report a user post
- * @middleware authenticateJWT - Ensures user is authenticated
- * @middleware reportPostController - Handles the report request
- */
-router.post('/posts/report', authenticateJWT, reportPostController as RequestHandler);
 
 export default router;

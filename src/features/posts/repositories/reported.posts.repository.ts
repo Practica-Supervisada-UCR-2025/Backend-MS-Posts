@@ -274,30 +274,3 @@ export const restoreReportedPost = async (postId: string): Promise<{message: str
     throw error;
   }
 }
-
-/**
- * Saves a reported post to the database.
- *
- * @param postId - ID of the reported post
- * @param reason - Reason for reporting the post
- * @param reportedBy - ID of the user reporting the post
- * @returns Object containing a message indicating the operation result
- */
-export const saveReportedPost = async (
-  postId: string,
-  reason: string,
-  reportedBy: string
-): Promise<{ message: string }> => {
-  try {
-    const query = `
-      INSERT INTO reports (reported_content_id, reason, reported_by, status)
-      VALUES ($1, $2, $3, $4)
-    `;
-    const values = [postId, reason, reportedBy, 1]; // 1 indicates an active report
-    await client.query(query, values);
-
-    return { message: 'Report has been successfully saved' };
-  } catch (error) {
-    throw new Error('Failed to save the reported post');
-  }
-};

@@ -7,7 +7,7 @@ export const createReportSchema = yup.object({
     .required('post ID is required to report a post'),
   reason: yup
     .string()
-    .max(500, 'Reason must not exceed 500 characters')
+    .max(255, 'Reason must not exceed 255 characters')
     .optional()
     .default('Contenido inapropiado'),
   content_type: yup
