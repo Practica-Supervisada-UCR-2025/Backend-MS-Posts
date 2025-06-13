@@ -11,7 +11,6 @@ export const createReportController = async (
   next: NextFunction
 ) => {
   try {
-    console.log("Body: ", req.body);
     // Validate and cast the request body to RegisterDTO
     const validatedData = await createReportSchema.validate(req.body, { 
       abortEarly: false,

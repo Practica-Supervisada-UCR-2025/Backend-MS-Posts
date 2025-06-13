@@ -31,7 +31,6 @@ export const createReportService = async (reporter_id: string, report: createRep
     await createReport(newReport);
     return { message: 'Report created successfully.' };
   } catch (error) {
-    console.error('Error in createReport service:', error);
     if (error instanceof UnauthorizedError || error instanceof ConflictError) {
       throw error;
     }
