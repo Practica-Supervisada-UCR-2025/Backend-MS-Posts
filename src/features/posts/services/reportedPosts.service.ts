@@ -5,10 +5,8 @@ import {
   restoreReportedPost as restoreReportedPostFromDb
 } from '../repositories/reported.posts.repository';
 import { ReportedPost } from '@/features/posts/interfaces/reportedPost.entities.interface';
-import { ReportPostDTO } from '../dto/reportPost.dto';
 import { BadRequestError, InternalServerError } from '../../../utils/errors/api-error';
 import { DeleteReportedPostDto } from '../dto/deleteReportedPost.dto';
-import { verify } from 'jsonwebtoken';
 
 /**
  * Response shape for paginated reported posts.

@@ -5,7 +5,6 @@ import { AuthenticatedRequest } from '../../../features/middleware/authenticate.
 import { BadRequestError, UnauthorizedError } from '../../../utils/errors/api-error';
 import { getReportedPostsSchema, GetReportedPostsDto } from '../dto/getReportedPosts.dto';
 import { DeleteReportedPostDto, deleteReportedPostSchema } from '../dto/deleteReportedPost.dto';
-import { reportPostSchema } from '../dto/reportPost.dto';
 
 /**
  * Controller for fetching paginated reported posts.

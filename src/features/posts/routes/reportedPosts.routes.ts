@@ -22,5 +22,4 @@ router.post('/admin/reported/delete', authenticateJWT, deleteReportedPostControl
  * @middleware restoreReportedPostController - Handles the restoration request
  */
 router.post('/admin/reported/restore', authenticateJWT, restoreReportedPostController as RequestHandler);
-
 export default router;
