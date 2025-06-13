@@ -1,3 +1,4 @@
+import e from 'express';
 import * as yup from 'yup';
 
 export const createPostSchema = yup.object({
@@ -30,4 +31,18 @@ export const createPostSchema = yup.object({
   }
 );
 
+export const getFeedPostsSchema = yup.object({
+  limit: yup
+    .number()
+    .integer('The limit must be an integer')
+    .min(1, 'The limit must be at least 1')
+    .max(10, 'The limit must not exceed 5')
+    .default(10),
+  date: yup
+    .date()
+    .typeError('date must be a valid date')
+    .required('date is required'),
+});
+
 export type CreatePostsDTO = yup.InferType<typeof createPostSchema>;
+export type GetFeedPostsDTO = yup.InferType<typeof getFeedPostsSchema>;

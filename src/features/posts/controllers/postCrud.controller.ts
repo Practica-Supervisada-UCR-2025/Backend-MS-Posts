@@ -1,10 +1,11 @@
 import e, { NextFunction, Response } from 'express';
-import { createPost } from '../services/postCrud.service';
+import { createPost, getFeedPosts } from '../services/postCrud.service';
 import * as yup from 'yup';
+import { FeedPost } from '../interfaces/posts.entities.interface';
 import { AuthenticatedRequest } from '../../middleware/authenticate.middleware';
-import { BadRequestError } from '../../../utils/errors/api-error';
+import { BadRequestError, UnauthorizedError } from '../../../utils/errors/api-error';
 import multer from 'multer';
-import { createPostSchema, CreatePostsDTO } from '../dto/postCrud.dto';
+import { createPostSchema, CreatePostsDTO, getFeedPostsSchema, GetFeedPostsDTO } from '../dto/postCrud.dto';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -39,8 +40,6 @@ export const createPostController = async (req: AuthenticatedRequest, res: Respo
     const files = req.files as Express.Multer.File[] | undefined;
     const file = files && files.length > 0 ? files[0] : undefined;
 
-    console.log('Body:', req.body);
-
     const validatedBody = await createPostSchema.validate(req.body, {
       abortEarly: false,
       stripUnknown: true,
@@ -74,5 +73,27 @@ export const createPostController = async (req: AuthenticatedRequest, res: Respo
     } else {
       next(error);
     }
+  }
+}
+
+export const getPostsFeedController = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const validatedData = await getFeedPostsSchema.validate(req.query, {
+      abortEarly: false,
+      stripUnknown: true,
+    }) as GetFeedPostsDTO;
+
+    if (req.user.role !== 'user') {
+      throw new UnauthorizedError('User not authenticated');
+    }
+
+    const postsFeed = await getFeedPosts(validatedData.date, validatedData.limit); 
+
+    res.status(200).json({
+      message: 'Posts feed retrieved successfully',
+      posts: postsFeed,
+    });
+  } catch (error) {
+    next(error);
   }
 }

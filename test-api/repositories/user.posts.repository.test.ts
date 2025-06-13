@@ -1,4 +1,4 @@
-import { getVisiblePostsByUserIdPaginated, getTotalVisiblePostsByUserId } from '../../src/features/posts/repositories/getPosts.repository';
+import { getVisiblePostsByUserIdPaginated, getTotalVisiblePostsByUserId, getVisiblePostsByUserIdAndTime, getTotalVisiblePostsByUserIdAndTime } from '../../src/features/posts/repositories/getPosts.repository';
 import { QueryResult } from 'pg';
 
 const mockClient = require('../../src/config/database');
@@ -94,6 +94,100 @@ describe('User Posts Repository', () => {
       expect(mockClient.query).toHaveBeenCalledWith(
         expect.stringContaining('SELECT COUNT(*) FROM posts WHERE user_id = $1 AND status = $2'),
         ['nonexistent-user-id', 1]
+      );
+    });
+  });
+
+  describe('getVisiblePostsByUserIdAndTime', () => {
+    it('should return posts for a valid user ID created before the given timestamp', async () => {
+      const timestamp = '2025-05-05T12:00:00.000Z';
+      const mockPosts = [
+        {
+          id: '1',
+          user_id: 'user-uuid',
+          content: 'Test post',
+          file_url: 'https://example.com/file.jpg',
+          media_type: 1,
+          created_at: '2025-05-01T12:00:00.000Z',
+        },
+      ];
+
+      mockClient.query.mockResolvedValueOnce({
+        rows: mockPosts,
+        rowCount: 1,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      const result = await getVisiblePostsByUserIdAndTime('user-uuid', timestamp, 10);
+
+      expect(result).toEqual(mockPosts);
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT id, user_id, content, file_url, media_type, created_at FROM posts'),
+        ['user-uuid', timestamp, 10]
+      );
+    });
+
+    it('should return an empty array when no posts are found before the given timestamp', async () => {
+      const timestamp = '2025-05-05T12:00:00.000Z';
+
+      mockClient.query.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      const result = await getVisiblePostsByUserIdAndTime('nonexistent-user-id', timestamp, 10);
+
+      expect(result).toEqual([]);
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT id, user_id, content, file_url, media_type, created_at FROM posts'),
+        ['nonexistent-user-id', timestamp, 10]
+      );
+    });
+  });
+
+  describe('getTotalVisiblePostsByUserIdAndTime', () => {
+    it('should return the total count of visible posts for a valid user ID before the given timestamp', async () => {
+      const timestamp = '2025-05-05T12:00:00.000Z';
+
+      mockClient.query.mockResolvedValueOnce({
+        rows: [{ count: '3' }],
+        rowCount: 1,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      const result = await getTotalVisiblePostsByUserIdAndTime('user-uuid', timestamp);
+
+      expect(result).toBe(3);
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT COUNT(*) FROM posts WHERE user_id = $1 AND status = $2 AND is_active = true AND created_at < $3'),
+        ['user-uuid', 1, timestamp]
+      );
+    });
+
+    it('should return 0 when no posts are found for the user before the given timestamp', async () => {
+      const timestamp = '2025-05-05T12:00:00.000Z';
+
+      mockClient.query.mockResolvedValueOnce({
+        rows: [{ count: '0' }],
+        rowCount: 1,
+        command: '',
+        oid: 0,
+        fields: [],
+      } as QueryResult);
+
+      const result = await getTotalVisiblePostsByUserIdAndTime('nonexistent-user-id', timestamp);
+
+      expect(result).toBe(0);
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('SELECT COUNT(*) FROM posts WHERE user_id = $1 AND status = $2 AND is_active = true AND created_at < $3'),
+        ['nonexistent-user-id', 1, timestamp]
       );
     });
   });

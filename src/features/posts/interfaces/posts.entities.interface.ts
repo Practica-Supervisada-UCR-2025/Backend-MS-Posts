@@ -11,6 +11,12 @@ export interface BasePost {
   created_at?: Date;
   updated_at?: Date;
 }
+
+export interface FeedPost extends BasePost {
+  username: string;
+  profile_picture_url: string;
+}
+
 export interface PaginatedResponse<T> {
   message: string;
   data: T[];
@@ -18,6 +24,15 @@ export interface PaginatedResponse<T> {
     totalItems: number;
     totalPages: number;
     currentPage: number;
+  };
+}
+
+export interface PaginatedTimeResponse<T> {
+  message: string;
+  data: T[];
+  metadata: {
+    remainingItems: number;
+    remainingPages: number;
   };
 }
 
