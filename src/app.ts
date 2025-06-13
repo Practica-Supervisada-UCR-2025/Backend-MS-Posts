@@ -3,6 +3,7 @@ import { errorHandler } from './utils/errors/error-handler.middleware';
 import cors from "cors";
 import postRoutes from './features/posts/routes/post.routes';
 import reportedPostsRoutes from './features/posts/routes/reportedPosts.routes';
+import reportRoutes from './features/reports/routes/reports.routes';
 
 export const app = express();
 const PORT = 3000;
@@ -16,6 +17,7 @@ app.use(cors());
 // Add the user posts routes
 app.use('/api', postRoutes);
 app.use('/api', reportedPostsRoutes);
+app.use('/api', reportRoutes);
 
 // Error handling middleware should be last
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

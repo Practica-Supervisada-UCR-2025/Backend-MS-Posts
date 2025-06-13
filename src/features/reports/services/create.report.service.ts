@@ -18,12 +18,12 @@ export const createReportService = async (reporter_id: string, report: createRep
     // Create report object
     const newReport = {
         id: uuidv4(),
-        reporter_id,
-        reporter_content_id: report.postID,
+        reporter_id: reporter_id,
+        reported_content_id: report.postID,
         content_type: report.content_type,
         reason: report.reason,
         created_at: new Date(),
-        resulver_id: null,
+        resolver_id: null,
         status: ACTIVE_REPORT_STATUS
     };
 
