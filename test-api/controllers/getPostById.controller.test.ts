@@ -17,9 +17,9 @@ describe('getPostByIdController', () => {
       params: { postId: '123' },
       query: { commentPage: '1', commentLimit: '5' },
       user: {
-        role: 'user',
-        email: 'test@example.com',
-        uuid: 'test-uuid'
+        role: 'admin',
+        email: 'admin@example.com',
+        uuid: 'admin-uuid'
       }
     };
     mockResponse = {
@@ -61,11 +61,11 @@ describe('getPostByIdController', () => {
     expect(mockNext).not.toHaveBeenCalled();
   });
 
-  it('should call next with UnauthorizedError when role is not user', async () => {
+  it('should call next with UnauthorizedError when role is not admin', async () => {
     mockRequest.user = {
-      role: 'admin',
-      email: 'admin@example.com',
-      uuid: 'admin-uuid'
+      role: 'user',
+      email: 'user@example.com',
+      uuid: 'user-uuid'
     };
 
     await getPostByIdController(

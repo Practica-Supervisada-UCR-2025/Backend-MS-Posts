@@ -1,6 +1,10 @@
+// Add missing imports
+import { PaginatedTimeResponse } from '../interfaces/posts.entities.interface';
+import { getTotalVisiblePosts } from '../repositories/post.crud.repository';
+import { InternalServerError } from '../../../utils/errors/api-error';
 import axios from 'axios';
 import FormData from 'form-data';
-import { findByEmailUser, createPostDB } from '../repositories/post.crud.repository';
+import { findByEmailUser, createPostDB, findFeedPosts } from '../repositories/post.crud.repository';
 import { Post } from '../interfaces/posts.entities.interface';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -62,3 +66,38 @@ export const uploadFileToMicroservice = async (file: Express.Multer.File, tokenA
 
   return response.data.fileUrl;
 };
+
+export const getFeedPosts = async (date: Date, limit: number): Promise<PaginatedTimeResponse<Post>> => {
+  try {
+    // Fetch total posts count
+    const totalItems = await getTotalVisiblePosts(date);
+    if (totalItems === undefined) {
+      throw new InternalServerError('Failed to fetch total posts');
+    }
+
+    console.log('Total items:', totalItems);
+
+    // Fetch posts
+    const posts = await findFeedPosts(date, limit);
+    if (!posts) {
+      throw new InternalServerError('Failed to fetch posts');
+    }
+
+     console.log('Data:', posts);
+
+    // Calculate remaining items and pages
+    const remainingItems = totalItems - posts.length;
+    const remainingPages = Math.ceil(remainingItems / limit);
+
+    return {
+      message: 'Posts retrieved successfully',
+      data: posts,
+      metadata: {
+        remainingItems,
+        remainingPages,
+      },
+    };
+  } catch (error) {
+    throw new InternalServerError('Failed to fetch posts');
+  }
+}

@@ -23,7 +23,7 @@ describe('GET /user/posts/:postId', () => {
   it('should return 200 and post details when authenticated with valid role', async () => {
     // Mock authentication with user role
     mockedAuthenticateJWT.mockImplementation((req: any, res, next) => {
-      req.user = { role: 'user' };
+      req.user = { role: 'admin' };
       next();
     });
 
@@ -80,7 +80,7 @@ describe('GET /user/posts/:postId', () => {
 
   it('should return 401 when user has invalid role', async () => {
     mockedAuthenticateJWT.mockImplementation((req: any, res, next) => {
-      req.user = { role: 'admin' };
+      req.user = { role: 'user' };
       next();
     });
 
@@ -99,7 +99,7 @@ describe('GET /user/posts/:postId', () => {
 
   it('should return 400 when query parameters are invalid', async () => {
     mockedAuthenticateJWT.mockImplementation((req: any, res, next) => {
-      req.user = { role: 'user' };
+      req.user = { role: 'admin' };
       next();
     });
 
@@ -124,7 +124,7 @@ describe('GET /user/posts/:postId', () => {
 
   it('should return 400 when commentLimit exceeds maximum', async () => {
     mockedAuthenticateJWT.mockImplementation((req: any, res, next) => {
-      req.user = { role: 'user' };
+      req.user = { role: 'admin' };
       next();
     });
 
@@ -149,7 +149,7 @@ describe('GET /user/posts/:postId', () => {
 
   it('should use default values when no query parameters are provided', async () => {
     mockedAuthenticateJWT.mockImplementation((req: any, res, next) => {
-      req.user = { role: 'user' };
+      req.user = { role: 'admin' };
       next();
     });
 
@@ -179,7 +179,7 @@ describe('GET /user/posts/:postId', () => {
 
   it('should handle string values for numeric parameters', async () => {
     mockedAuthenticateJWT.mockImplementation((req: any, res, next) => {
-      req.user = { role: 'user' };
+      req.user = { role: 'admin' };
       next();
     });
 
@@ -210,7 +210,7 @@ describe('GET /user/posts/:postId', () => {
 
   it('should return 404 when post is not found', async () => {
     mockedAuthenticateJWT.mockImplementation((req: any, res, next) => {
-      req.user = { role: 'user' };
+      req.user = { role: 'admin' };
       next();
     });
 
