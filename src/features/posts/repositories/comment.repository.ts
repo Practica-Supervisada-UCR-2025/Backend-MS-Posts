@@ -4,8 +4,18 @@ import { QueryResult } from 'pg';
 export interface PostComment {
     id: string;
     content: string;
-    username: string;
+    user_id: string;
+    post_id: string;
+    file_url: string | null;
+    file_size: number | null;
+    media_type: string | null;
+    is_active: boolean;
+    is_edited: boolean;
+    status: number;
     created_at: Date;
+    updated_at: Date;
+    username: string;
+    profile_picture: string | null;
 }
 
 export const getCommentsByPostId = async (
@@ -29,7 +39,7 @@ export const getCommentsByPostId = async (
             c.created_at,
             c.updated_at,
             u.username,
-            users.profile_picture
+            u.profile_picture
         FROM comments c
                  JOIN users u ON u.id = c.user_id
         WHERE c.post_id = $1 AND c.created_at >= $2
@@ -38,6 +48,7 @@ export const getCommentsByPostId = async (
     `;
     const values = [postId, startTime, limit, offset * limit];
     const result: QueryResult<PostComment> = await client.query(query, values);
+    console.log(result);
     return result.rows;
 };
 
