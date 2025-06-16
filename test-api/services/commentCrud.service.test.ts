@@ -57,11 +57,11 @@ describe('createComment', () => {
         jest.clearAllMocks();
     });
 
-    it('crea un comentario sin archivo', async () => {
+    it('creates a comment without file', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 1 });
         (commentRepo.createCommentDB as jest.Mock).mockResolvedValue({
             id: 'uuid',
-            content: 'Hola comentario',
+            content: 'Test comment',
             user_id: 1,
             post_id: 'post1',
             file_url: null,
@@ -73,7 +73,7 @@ describe('createComment', () => {
             created_at: '2024-01-01',
             updated_at: '2024-01-01',
         });
-        const comment = { content: 'Hola comentario', postId: 'post1' };
+        const comment = { content: 'Test comment', postId: 'post1' };
 
         const result = await createComment('test@mail.com', 'token', comment);
 
@@ -81,7 +81,7 @@ describe('createComment', () => {
             message: 'Comment created successfully',
             comment: {
                 id: 'uuid',
-                content: 'Hola comentario',
+                content: 'Test comment',
                 user_id: 1,
                 post_id: 'post1',
                 file_url: null,
@@ -97,11 +97,11 @@ describe('createComment', () => {
         expect(mockUploadFileToMicroservice).not.toHaveBeenCalled();
     });
 
-    it('crea un comentario con archivo', async () => {
+    it('creates a comment with file', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 2 });
         (commentRepo.createCommentDB as jest.Mock).mockResolvedValue({
             id: 'uuid',
-            content: 'Con archivo',
+            content: 'With file',
             user_id: 2,
             post_id: 'post2',
             file_url: 'http://url.com/file.png',
@@ -121,15 +121,15 @@ describe('createComment', () => {
             size: 123,
             fieldname: 'file',
         };
-        const comment = { content: 'Con archivo', postId: 'post2', mediaType: 1 };
+        const comment = { content: 'With file', postId: 'post2', mediaType: 1 };
 
-        const result = await createComment('otro@mail.com', 'token', comment, file);
+        const result = await createComment('other@mail.com', 'token', comment, file);
 
         expect(result).toEqual({
             message: 'Comment created successfully',
             comment: {
                 id: 'uuid',
-                content: 'Con archivo',
+                content: 'With file',
                 user_id: 2,
                 post_id: 'post2',
                 file_url: 'http://url.com/file.png',
@@ -145,11 +145,11 @@ describe('createComment', () => {
         expect(mockUploadFileToMicroservice).toHaveBeenCalledWith(file, 'token');
     });
 
-    it('crea un comentario con gif (mediaType 2)', async () => {
+    it('creates a comment with gif (mediaType 2)', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 3 });
         (commentRepo.createCommentDB as jest.Mock).mockResolvedValue({
             id: 'uuid',
-            content: 'Con gif',
+            content: 'With gif',
             user_id: 3,
             post_id: 'post3',
             file_url: 'http://gif.com/anim.gif',
@@ -161,7 +161,7 @@ describe('createComment', () => {
             created_at: '2024-01-01',
             updated_at: '2024-01-01',
         });
-        const comment = { content: 'Con gif', postId: 'post3', mediaType: 2, gifUrl: 'http://gif.com/anim.gif' };
+        const comment = { content: 'With gif', postId: 'post3', mediaType: 2, gifUrl: 'http://gif.com/anim.gif' };
 
         const result = await createComment('gif@mail.com', 'token', comment);
 
@@ -169,7 +169,7 @@ describe('createComment', () => {
             message: 'Comment created successfully',
             comment: {
                 id: 'uuid',
-                content: 'Con gif',
+                content: 'With gif',
                 user_id: 3,
                 post_id: 'post3',
                 file_url: 'http://gif.com/anim.gif',
@@ -185,11 +185,11 @@ describe('createComment', () => {
         expect(mockUploadFileToMicroservice).not.toHaveBeenCalled();
     });
 
-    it('crea un comentario con mediaType definido pero sin archivo ni gifUrl', async () => {
+    it('creates a comment with mediaType defined but without file or gifUrl', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 4 });
         (commentRepo.createCommentDB as jest.Mock).mockResolvedValue({
             id: 'uuid',
-            content: 'Solo mediaType',
+            content: 'Only mediaType',
             user_id: 4,
             post_id: 'post4',
             file_url: undefined,
@@ -201,7 +201,7 @@ describe('createComment', () => {
             created_at: '2024-01-01',
             updated_at: '2024-01-01',
         });
-        const comment = { content: 'Solo mediaType', postId: 'post4', mediaType: 1 };
+        const comment = { content: 'Only mediaType', postId: 'post4', mediaType: 1 };
 
         const result = await createComment('media@mail.com', 'token', comment);
 
@@ -209,7 +209,7 @@ describe('createComment', () => {
             message: 'Comment created successfully',
             comment: {
                 id: 'uuid',
-                content: 'Solo mediaType',
+                content: 'Only mediaType',
                 user_id: 4,
                 post_id: 'post4',
                 file_url: undefined,
@@ -225,7 +225,7 @@ describe('createComment', () => {
         expect(mockUploadFileToMicroservice).not.toHaveBeenCalled();
     });
 
-    it('lanza error si createCommentDB falla', async () => {
+    it('throws error if createCommentDB fails', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 5 });
         (commentRepo.createCommentDB as jest.Mock).mockRejectedValue(new Error('DB error'));
         const comment = { content: 'Error DB', postId: 'post5' };
@@ -235,7 +235,7 @@ describe('createComment', () => {
         ).rejects.toThrow('DB error');
     });
 
-    it('lanza error si uploadFileToMicroservice falla', async () => {
+    it('throws error if uploadFileToMicroservice fails', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 6 });
         mockUploadFileToMicroservice.mockRejectedValue(new Error('Upload error'));
         const file: any = {
@@ -245,18 +245,18 @@ describe('createComment', () => {
             size: 123,
             fieldname: 'file',
         };
-        const comment = { content: 'Con archivo', postId: 'post6', mediaType: 1 };
+        const comment = { content: 'With file', postId: 'post6', mediaType: 1 };
 
         await expect(
             createComment('failupload@mail.com', 'token', comment, file)
         ).rejects.toThrow('Upload error');
     });
 
-    it('pasa mediaType y gifUrl correctamente', async () => {
+    it('passes mediaType and gifUrl correctly', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 7 });
         (commentRepo.createCommentDB as jest.Mock).mockResolvedValue({
             id: 'uuid',
-            content: 'Gif correcto',
+            content: 'Correct gif',
             user_id: 7,
             post_id: 'post7',
             file_url: 'http://gif.com/anim.gif',
@@ -268,7 +268,7 @@ describe('createComment', () => {
             created_at: '2024-01-01',
             updated_at: '2024-01-01',
         });
-        const comment = { content: 'Gif correcto', postId: 'post7', mediaType: 2, gifUrl: 'http://gif.com/anim.gif' };
+        const comment = { content: 'Correct gif', postId: 'post7', mediaType: 2, gifUrl: 'http://gif.com/anim.gif' };
 
         const result = await createComment('gif2@mail.com', 'token', comment);
 
@@ -277,9 +277,9 @@ describe('createComment', () => {
         expect(mockUploadFileToMicroservice).not.toHaveBeenCalled();
     });
 
-    it('lanza error si el usuario no existe', async () => {
+    it('throws error if user does not exist', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue(null);
-        const comment = { content: 'Hola', postId: 'post8' };
+        const comment = { content: 'Hello', postId: 'post8' };
 
         await expect(
             createComment('noexiste@mail.com', 'token', comment)

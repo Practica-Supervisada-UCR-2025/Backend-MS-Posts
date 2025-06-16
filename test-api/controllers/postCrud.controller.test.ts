@@ -174,3 +174,62 @@ describe('POST /posts/newPost → createPostController', () => {
     expect(res.body.message).toBe('Custom bad request');
   });
 });
+
+describe('GET /posts/feed → getPostsFeedController', () => {
+  let app: express.Application;
+
+  beforeAll(() => {
+    app = express();
+    app.use(express.json());
+    app.use('/', postsRoutes);
+    app.use(errorHandler as ErrorRequestHandler);
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const mockFeed = [
+    { id: '1', content: 'Post 1', user_id: 'user-uuid', created_at: '2025-05-19T10:00:00.000Z' },
+    { id: '2', content: 'Post 2', user_id: 'user-uuid', created_at: '2025-05-18T10:00:00.000Z' },
+  ];
+
+  it('returns 200 and posts feed when authenticated and valid data', async () => {
+    (postCrudService.getFeedPosts as jest.Mock).mockResolvedValueOnce(mockFeed);
+    const res = await request(app)
+      .get('/posts/feed?date=2025-05-19T10:00:00.000Z&limit=2')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(200);
+    expect(res.body).toEqual({
+      message: 'Posts feed retrieved successfully',
+      posts: mockFeed,
+    });
+    expect(postCrudService.getFeedPosts).toHaveBeenCalled();
+  });
+
+  it('returns 401 if user is not role user', async () => {
+    const res = await request(app)
+      .get('/posts/feed?date=2025-05-19T10:00:00.000Z&limit=2')
+      .set('Authorization', 'Bearer wrong-role')
+      .expect(401);
+    expect(res.body.message).toBe('User not authenticated');
+  });
+
+  it('returns 400 if validation fails', async () => {
+    const res = await request(app)
+      .get('/posts/feed?date=invalid-date&limit=abc')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(400);
+    expect(res.body.message).toBe('Validation Error');
+    expect(res.body.details).toBeDefined();
+  });
+
+  it('returns 500 if service throws unexpected error', async () => {
+    (postCrudService.getFeedPosts as jest.Mock).mockRejectedValueOnce(new Error('Unexpected error'));
+    const res = await request(app)
+      .get('/posts/feed?date=2025-05-19T10:00:00.000Z&limit=2')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(500);
+    expect(res.body.message).toBe('Internal Server Error');
+  });
+});

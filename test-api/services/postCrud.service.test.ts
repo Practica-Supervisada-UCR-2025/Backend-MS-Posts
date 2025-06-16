@@ -1,5 +1,5 @@
 import * as postCrudService from '../../src/features/posts/services/postCrud.service';
-import * as repository from '../../src/features/posts/repositories/post.crud.repository';
+import * as postCrudRepository from '../../src/features/posts/repositories/post.crud.repository';
 import axios from 'axios';
 
 jest.mock('../../src/features/posts/repositories/post.crud.repository');
@@ -14,8 +14,8 @@ describe('createPost', () => {
   });
 
   it('crea un post sin archivo', async () => {
-    (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 1 });
-    (repository.createPostDB as jest.Mock).mockResolvedValue({
+    (postCrudRepository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 1 });
+    (postCrudRepository.createPostDB as jest.Mock).mockResolvedValue({
       id: 'uuid',
       content: 'Hola mundo',
       user_id: 1,
@@ -52,8 +52,8 @@ describe('createPost', () => {
   });
 
   it('crea un post con archivo', async () => {
-    (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 2 });
-    (repository.createPostDB as jest.Mock).mockResolvedValue({
+    (postCrudRepository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 2 });
+    (postCrudRepository.createPostDB as jest.Mock).mockResolvedValue({
       id: 'uuid',
       content: 'Con archivo',
       user_id: 2,
@@ -98,8 +98,8 @@ describe('createPost', () => {
     });
 
     it('crea un post con gif (mediaType 2)', async () => {
-    (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 3 });
-    (repository.createPostDB as jest.Mock).mockResolvedValue({
+    (postCrudRepository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 3 });
+    (postCrudRepository.createPostDB as jest.Mock).mockResolvedValue({
       id: 'uuid',
       content: 'Con gif',
       user_id: 3,
@@ -136,8 +136,8 @@ describe('createPost', () => {
     });
 
     it('crea un post con mediaType definido pero sin archivo ni gifUrl', async () => {
-    (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 4 });
-    (repository.createPostDB as jest.Mock).mockResolvedValue({
+    (postCrudRepository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 4 });
+    (postCrudRepository.createPostDB as jest.Mock).mockResolvedValue({
       id: 'uuid',
       content: 'Solo mediaType',
       user_id: 4,
@@ -174,8 +174,8 @@ describe('createPost', () => {
     });
 
     it('lanza error si createPostDB falla', async () => {
-    (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 5 });
-    (repository.createPostDB as jest.Mock).mockRejectedValue(new Error('DB error'));
+    (postCrudRepository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 5 });
+    (postCrudRepository.createPostDB as jest.Mock).mockRejectedValue(new Error('DB error'));
     const post = { content: 'Error DB' };
 
     await expect(
@@ -184,7 +184,7 @@ describe('createPost', () => {
     });
 
     it('lanza error si uploadFileToMicroservice falla', async () => {
-    (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 6 });
+    (postCrudRepository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 6 });
     mockUploadFileToMicroservice.mockRejectedValue(new Error('Upload error'));
     const file: any = {
       buffer: Buffer.from('test'),
@@ -201,8 +201,8 @@ describe('createPost', () => {
     });
 
     it('pasa mediaType y gifUrl correctamente', async () => {
-    (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 7 });
-    (repository.createPostDB as jest.Mock).mockResolvedValue({
+    (postCrudRepository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 7 });
+    (postCrudRepository.createPostDB as jest.Mock).mockResolvedValue({
       id: 'uuid',
       content: 'Gif correcto',
       user_id: 7,
@@ -225,7 +225,7 @@ describe('createPost', () => {
     });
 
     it('lanza error si el usuario no existe', async () => {
-    (repository.findByEmailUser as jest.Mock).mockResolvedValue(null);
+    (postCrudRepository.findByEmailUser as jest.Mock).mockResolvedValue(null);
 
     await expect(
       postCrudService.createPost('noexiste@mail.com', 'token', { content: 'Hola' })
@@ -266,5 +266,48 @@ describe('createPost', () => {
 
     const result = await postCrudService.uploadFileToMicroservice(file, 'token');
     expect(result).toBe('http://url.com/file.png');
+  });
+});
+
+describe('getFeedPosts', () => {
+  const mockDate = new Date('2025-06-09T10:00:00.000Z');
+  const mockPosts = [
+    { id: '1', content: 'Post 1', user_id: 'user-uuid', created_at: '2025-06-09T10:00:00.000Z' },
+    { id: '2', content: 'Post 2', user_id: 'user-uuid', created_at: '2025-06-08T10:00:00.000Z' },
+  ];
+  const mockTotal = 10;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('returns posts, metadata and message correctly', async () => {
+    (postCrudRepository.getTotalVisiblePosts as jest.Mock).mockResolvedValueOnce(mockTotal);
+    (postCrudRepository.findFeedPosts as jest.Mock).mockResolvedValueOnce(mockPosts);
+    const result = await postCrudService.getFeedPosts(mockDate, 2);
+    expect(result).toEqual({
+      message: 'Posts retrieved successfully',
+      data: mockPosts,
+      metadata: {
+        remainingItems: mockTotal - mockPosts.length,
+        remainingPages: Math.ceil((mockTotal - mockPosts.length) / 2),
+      },
+    });
+  });
+
+  it('throws InternalServerError if getTotalVisiblePosts returns undefined', async () => {
+    (postCrudRepository.getTotalVisiblePosts as jest.Mock).mockResolvedValueOnce(undefined);
+    await expect(postCrudService.getFeedPosts(mockDate, 2)).rejects.toThrow('Failed to fetch posts');
+  });
+
+  it('throws InternalServerError if findFeedPosts returns null', async () => {
+    (postCrudRepository.getTotalVisiblePosts as jest.Mock).mockResolvedValueOnce(mockTotal);
+    (postCrudRepository.findFeedPosts as jest.Mock).mockResolvedValueOnce(null);
+    await expect(postCrudService.getFeedPosts(mockDate, 2)).rejects.toThrow('Failed to fetch posts');
+  });
+
+  it('throws InternalServerError if an unexpected error occurs', async () => {
+    (postCrudRepository.getTotalVisiblePosts as jest.Mock).mockRejectedValueOnce(new Error('DB error'));
+    await expect(postCrudService.getFeedPosts(mockDate, 2)).rejects.toThrow('Failed to fetch posts');
   });
 });
