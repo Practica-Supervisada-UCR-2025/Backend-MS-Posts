@@ -4,8 +4,18 @@ import { QueryResult } from 'pg';
 export interface PostComment {
     id: string;
     content: string;
-    username: string;
+    user_id: string;
+    post_id: string;
+    file_url: string | null;
+    file_size: number | null;
+    media_type: string | null;
+    is_active: boolean;
+    is_edited: boolean;
+    status: number;
     created_at: Date;
+    updated_at: Date;
+    username: string;
+    profile_picture: string | null;
 }
 
 export const getCommentsByPostId = async (
@@ -15,15 +25,30 @@ export const getCommentsByPostId = async (
     limit: number = 5
 ): Promise<PostComment[]> => {
     const query = `
-    SELECT c.id, c.content, u.username, c.created_at
-    FROM comments c
-    JOIN users u ON u.id = c.user_id
-    WHERE c.post_id = $1 AND c.created_at >= $2
-    ORDER BY c.created_at ASC
-    LIMIT $3 OFFSET $4
-  `;
+        SELECT
+            c.id,
+            c.content,
+            c.user_id,
+            c.post_id,
+            c.file_url,
+            c.file_size,
+            c.media_type,
+            c.is_active,
+            c.is_edited,
+            c.status,
+            c.created_at,
+            c.updated_at,
+            u.username,
+            u.profile_picture
+        FROM comments c
+                 JOIN users u ON u.id = c.user_id
+        WHERE c.post_id = $1 AND c.created_at >= $2
+        ORDER BY c.created_at ASC
+            LIMIT $3 OFFSET $4
+    `;
     const values = [postId, startTime, limit, offset * limit];
     const result: QueryResult<PostComment> = await client.query(query, values);
+    console.log(result);
     return result.rows;
 };
 
