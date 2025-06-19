@@ -87,6 +87,8 @@ export const getPostByIdWithDetails = async (postId: string) => {
       p.media_type,
       p.created_at,
       p.updated_at,
+      p.status,
+      p.is_active,
       u.username,
       u.email,
       (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS total_comments,
@@ -94,9 +96,9 @@ export const getPostByIdWithDetails = async (postId: string) => {
       COALESCE((SELECT COUNT(*) FROM reports r WHERE r.reported_content_id = p.id), 0) AS total_reports
     FROM posts p
     JOIN users u ON p.user_id = u.id
-    WHERE p.id = $1 AND p.is_active = true
+    WHERE p.id = $1
   `;
-  
+
   const result = await client.query(query, [postId]);
   return result.rows.length > 0 ? result.rows[0] : null;
 };
