@@ -62,7 +62,7 @@ export const getReportedPostsPaginated = async (
           ON u.id = p.user_id
         JOIN reports r
           ON r.reported_content_id = p.id
-        WHERE LOWER(u.username) = LOWER($4)
+        WHERE LOWER(u.username) = LOWER($4) AND p.is_active = true
         GROUP BY
           p.id,
           p.user_id,
@@ -108,6 +108,7 @@ export const getReportedPostsPaginated = async (
           ON u.id = p.user_id
         JOIN reports r
           ON r.reported_content_id = p.id
+        WHERE p.is_active = true
         GROUP BY
           p.id,
           p.user_id,
@@ -171,6 +172,7 @@ export const getAllReportedPosts = async (): Promise<ReportedPost[] | { message:
       ON u.id = p.user_id
     JOIN reports r
       ON r.reported_content_id = p.id
+    WHERE p.is_active = true
     GROUP BY
       p.id,
       p.user_id,
@@ -205,14 +207,15 @@ export const getReportedPostsCount = async (username?: string): Promise<number> 
         FROM posts p
         JOIN reports r
           ON r.reported_content_id = p.id
+        WHERE p.is_active = true AND r.status = $1
     `;
-    const values: string[] = [];
+    const values: (string | number)[] = [ACTIVE_REPORT_STATUS];
     if (username) {
-        countQuery += `
-        JOIN users u
-          ON u.id = p.user_id
-        WHERE LOWER(u.username) = LOWER($1)
-        `;
+        countQuery = countQuery.replace(
+          'FROM posts p',
+          'FROM posts p JOIN users u ON u.id = p.user_id'
+        );
+        countQuery += ` AND LOWER(u.username) = LOWER($2)`;
         values.push(username);
     }
     const result = await client.query<{ reported_count: string }>(countQuery, values);
