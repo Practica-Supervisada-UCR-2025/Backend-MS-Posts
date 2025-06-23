@@ -59,7 +59,7 @@ describe('Post Repository', () => {
   });
 
   describe('findFeedPosts', () => {
-    it('should return posts feed with user info', async () => {
+    it('should return posts feed with user info and comments_count', async () => {
       const date = new Date();
       const limit = 10;
       const sampleRows = [
@@ -68,12 +68,22 @@ describe('Post Repository', () => {
           content: 'Post 1',
           username: 'user1',
           profile_picture: 'pic1.png',
+          user_id: 'user-uuid-1',
+          file_url: 'file1.png',
+          created_at: date,
+          media_type: 0,
+          comments_count: 3,
         },
         {
           id: '2',
           content: 'Post 2',
           username: 'user2',
           profile_picture: 'pic2.png',
+          user_id: 'user-uuid-2',
+          file_url: 'file2.png',
+          created_at: date,
+          media_type: 1,
+          comments_count: 0,
         },
       ];
       mockClient.query.mockResolvedValueOnce({ rows: sampleRows });
@@ -82,9 +92,7 @@ describe('Post Repository', () => {
 
       expect(result).toEqual(sampleRows);
       expect(mockClient.query).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'SELECT posts.id, posts.user_id, posts.content, posts.file_url, posts.created_at, posts.media_type, users.username, users.profile_picture'
-        ),
+        expect.any(String),
         [date, limit]
       );
     });

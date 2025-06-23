@@ -27,7 +27,20 @@ export const createPostDB = async (post: Partial<Post>) => {
 
 export const findFeedPosts = async (date: Date, limit: number) => {
   const query = `
-    SELECT posts.id, posts.user_id, posts.content, posts.file_url, posts.created_at, posts.media_type, users.username, users.profile_picture
+    SELECT 
+      posts.id, 
+      posts.user_id, 
+      posts.content, 
+      posts.file_url, 
+      posts.created_at, 
+      posts.media_type, 
+      users.username, 
+      users.profile_picture,
+      (
+        SELECT COUNT(*) 
+        FROM comments 
+        WHERE comments.post_id = posts.id
+      ) AS comments_count
     FROM posts
     JOIN users ON posts.user_id = users.id
     WHERE posts.created_at < $1 AND posts.is_active = true AND posts.status = 1
@@ -49,4 +62,9 @@ export const getTotalVisiblePosts = async (date: Date) => {
   const values = [date];
   const res = await client.query(query, values);
   return res.rows[0]?.total || 0;
+};
+
+export const findUserById = async (id: string) => {
+  const res = await client.query('SELECT * FROM users WHERE id = $1', [id]);
+  return res.rows.length > 0 ? res.rows[0] : null;
 };
