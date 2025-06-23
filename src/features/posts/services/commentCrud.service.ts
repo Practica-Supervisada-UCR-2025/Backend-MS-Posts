@@ -2,9 +2,10 @@ import { getCommentsByPostId, countCommentsByPostId, createCommentDB } from '../
 import { findPostById } from '../repositories/post.repository';
 import { GetPostCommentsDTO } from '../dto/commentsCrud.dto';
 import { NotFoundError, InternalServerError } from '../../../utils/errors/api-error';
-import { findByEmailUser } from '../repositories/post.crud.repository';
+import { findByEmailUser, findUserById } from '../repositories/post.crud.repository';
 import { uploadFileToMicroservice } from './postCrud.service';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 
 export const getPostComments = async (
     postId: string,
@@ -39,6 +40,59 @@ export const getPostComments = async (
     }
 };
 
+async function sendCommentNotification({
+  userId,
+  title,
+  publicationId,
+  commentBody,
+  commentUserId,
+  body,
+  token
+}: {
+  userId: string,
+  title: string,
+  publicationId: string,
+  commentBody: string,
+  commentUserId: string,
+  body: string,
+  token: string
+}) {
+  try {
+    await axios.post(
+      'http://localhost:3001/api/push-notifications/send-to-user-comment',
+      {
+        userId,
+        title,
+        publicationId,
+        commentBody,
+        commentUserId,
+        body
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+  } catch (err) {
+    if (err instanceof Error) {
+      const anyErr = err as any;
+      if (anyErr.response && anyErr.response.data) {
+        console.error(
+          'Error sending comment notification:',
+          'Status:', anyErr.response.status,
+          'Data:', anyErr.response.data
+        );
+      } else {
+        console.error('Error sending comment notification:', err.message);
+      }
+    } else {
+      console.error('Error sending comment notification:', err);
+    }
+  }
+}
+
 export const createComment = async (
     email: string,
     tokenAuth: string,
@@ -61,6 +115,19 @@ export const createComment = async (
         throw new Error('User not found');
     }
 
+    const post = await findPostById(comment.postId);
+    if (!post) {
+        throw new Error('Post not found');
+    }
+    const postOwner = await findUserById(post.user_id);
+    if (!postOwner) {
+        throw new Error('Post owner not found');
+    }
+
+    if (user.id === postOwner.id) {
+        throw new Error('You cannot comment on your own post');
+    }
+
     const newCommentData: Partial<any> = {
         id: uuidv4(),
         content: comment.content,
@@ -75,6 +142,16 @@ export const createComment = async (
     };
 
     const createdComment = await createCommentDB(newCommentData);
+
+    await sendCommentNotification({
+        userId: user.auth_id,
+        title: 'New Comment on Your Post',
+        publicationId: comment.postId,
+        commentBody: comment.content || '',
+        commentUserId: postOwner.auth_id,
+        body: 'Someone commented on your post',
+        token: tokenAuth
+    });
 
     return {
         message: 'Comment created successfully',

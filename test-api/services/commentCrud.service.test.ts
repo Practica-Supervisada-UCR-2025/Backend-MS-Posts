@@ -23,7 +23,22 @@ describe('getPostComments service', () => {
 
     it('returns comments and metadata when post exists', async () => {
         mockedFindPostById.mockResolvedValue({ id: 'p1' } as any);
-        const comments = [{ id: '1', content: 'hi', username: 'alice', created_at: new Date() }];
+        const comments = [{
+            id: '1',
+            content: 'hi',
+            user_id: 'user1',
+            post_id: 'p1',
+            file_url: null,
+            file_size: null,
+            media_type: null,
+            is_active: true,
+            is_edited: false,
+            status: 0,
+            created_at: new Date(),
+            updated_at: new Date(),
+            username: 'alice',
+            profile_picture: null
+        }];
         mockedGetComments.mockResolvedValue(comments);
         mockedCount.mockResolvedValue(1);
 
@@ -59,6 +74,8 @@ describe('createComment', () => {
 
     it('creates a comment without file', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 1 });
+        (postRepo.findPostById as jest.Mock).mockResolvedValue({ id: 'post1', user_id: 2 });
+        (repository.findUserById as jest.Mock).mockResolvedValue({ id: 2 });
         (commentRepo.createCommentDB as jest.Mock).mockResolvedValue({
             id: 'uuid',
             content: 'Test comment',
@@ -99,6 +116,8 @@ describe('createComment', () => {
 
     it('creates a comment with file', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 2 });
+        (postRepo.findPostById as jest.Mock).mockResolvedValue({ id: 'post2', user_id: 3 });
+        (repository.findUserById as jest.Mock).mockResolvedValue({ id: 3 });
         (commentRepo.createCommentDB as jest.Mock).mockResolvedValue({
             id: 'uuid',
             content: 'With file',
@@ -147,6 +166,8 @@ describe('createComment', () => {
 
     it('creates a comment with gif (mediaType 2)', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 3 });
+        (postRepo.findPostById as jest.Mock).mockResolvedValue({ id: 'post3', user_id: 4 });
+        (repository.findUserById as jest.Mock).mockResolvedValue({ id: 4 });
         (commentRepo.createCommentDB as jest.Mock).mockResolvedValue({
             id: 'uuid',
             content: 'With gif',
@@ -187,6 +208,8 @@ describe('createComment', () => {
 
     it('creates a comment with mediaType defined but without file or gifUrl', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 4 });
+        (postRepo.findPostById as jest.Mock).mockResolvedValue({ id: 'post4', user_id: 5 });
+        (repository.findUserById as jest.Mock).mockResolvedValue({ id: 5 });
         (commentRepo.createCommentDB as jest.Mock).mockResolvedValue({
             id: 'uuid',
             content: 'Only mediaType',
@@ -227,6 +250,8 @@ describe('createComment', () => {
 
     it('throws error if createCommentDB fails', async () => {
         (repository.findByEmailUser as jest.Mock).mockResolvedValue({ id: 5 });
+        (postRepo.findPostById as jest.Mock).mockResolvedValue({ id: 'post5', user_id: 6 });
+        (repository.findUserById as jest.Mock).mockResolvedValue({ id: 6 });
         (commentRepo.createCommentDB as jest.Mock).mockRejectedValue(new Error('DB error'));
         const comment = { content: 'Error DB', postId: 'post5' };
 

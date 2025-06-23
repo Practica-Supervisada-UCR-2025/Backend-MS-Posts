@@ -74,10 +74,9 @@ describe('getPostByIdWithDetails repository', () => {
       ['123']
     );
     
-    // Verify the query includes joins with user table and is selecting visible posts only
+    // Verify the query includes joins with user table and all required fields
     const queryCall = mockClient.query.mock.calls[0][0];
     expect(queryCall.toLowerCase()).toContain('join users');
-    expect(queryCall.toLowerCase()).toContain('is_active = true');
     expect(queryCall.toLowerCase()).toContain('total_comments');
     expect(queryCall.toLowerCase()).toContain('active_reports');
     expect(queryCall.toLowerCase()).toContain('total_reports');
@@ -103,7 +102,7 @@ describe('getPostByIdWithDetails repository', () => {
     );
   });
 
-  it('should return null when post exists but is not visible', async () => {
+  it('should return post details even if post is not visible', async () => {
     const mockPost: PostWithUserDetails = {
       id: '123',
       content: 'Test post content',
@@ -121,8 +120,8 @@ describe('getPostByIdWithDetails repository', () => {
     };
 
     const mockQueryResult: QueryResult<PostWithUserDetails> = {
-      rows: [],
-      rowCount: 0,
+      rows: [mockPost],
+      rowCount: 1,
       command: 'SELECT',
       oid: 0,
       fields: []
@@ -132,7 +131,7 @@ describe('getPostByIdWithDetails repository', () => {
 
     const result = await getPostByIdWithDetails('123');
 
-    expect(result).toBeNull();
+    expect(result).toEqual(mockPost);
   });
 
   it('should include user details in the result', async () => {

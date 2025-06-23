@@ -43,7 +43,7 @@ export const getCommentsByPostId = async (
         FROM comments c
                  JOIN users u ON u.id = c.user_id
         WHERE c.post_id = $1 AND c.created_at >= $2
-        ORDER BY c.created_at ASC
+        ORDER BY c.created_at DESC
             LIMIT $3 OFFSET $4
     `;
     const values = [postId, startTime, limit, offset * limit];
