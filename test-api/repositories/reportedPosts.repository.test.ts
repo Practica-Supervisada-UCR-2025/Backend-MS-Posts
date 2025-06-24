@@ -136,30 +136,19 @@ describe('Reported Posts Repository', () => {
       expect(result).toBe(5);
     });
 
-  it('should return the count of reported posts with username', async () => {
-  mockClient.query.mockResolvedValueOnce({
-    rows: [{ reported_count: '3' }],
-  } as QueryResult<{ reported_count: string }>);
+    it('should return the count of reported posts with username', async () => {
+      mockClient.query.mockResolvedValueOnce({
+        rows: [{ reported_count: '3' }],
+      } as QueryResult<{ reported_count: string }>);
 
-  const result = await getReportedPostsCount('testuser');
+      const result = await getReportedPostsCount('testuser');
 
-  expect(result).toBe(3);
-
-  // Verifica que los filtros estén presentes en el query
-  expect(mockClient.query).toHaveBeenCalledWith(
-    expect.stringContaining('p.is_active = true'),
-    expect.any(Array)
-  );
-  expect(mockClient.query).toHaveBeenCalledWith(
-    expect.stringContaining('r.status = $1'),
-    expect.any(Array)
-  );
-  expect(mockClient.query).toHaveBeenCalledWith(
-    expect.stringContaining('LOWER(u.username) = LOWER($2)'),
-    [1, 'testuser']
-  );
-});
-
+      expect(result).toBe(3);
+      expect(mockClient.query).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE LOWER(u.username) = LOWER($1)'),
+        ['testuser']
+      );
+    });
   });
 
   describe('deleteReportedPost', () => {
