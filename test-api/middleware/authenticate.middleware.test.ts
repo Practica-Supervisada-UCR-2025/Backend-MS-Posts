@@ -110,4 +110,31 @@ describe('Authentication Middleware', () => {
       expect((mockRequest as any).user.role).toBe('user');
     });
   });
+
+  it('should throw ForbiddenError when non-admin user is suspended', async () => {
+    const { isUserSuspended } = require('../../src/features/posts/repositories/suspensions.repository');
+    (isUserSuspended as jest.Mock).mockResolvedValue(true); // ← simulate suspension
+
+    mockRequest.headers = { authorization: 'Bearer validToken' };
+    const mockDecodedToken = {
+      role: 'user', // <- not admin
+      email: 'example@ucr.ac.cr',
+      uuid: '12345678'
+    };
+
+    (JwtService.prototype.verifyToken as jest.Mock).mockReturnValue(mockDecodedToken);
+
+    await authenticateJWT(
+        mockRequest as Request,
+        mockResponse as Response,
+        nextFunction
+    );
+
+    const error = (nextFunction as jest.Mock).mock.calls[0][0];
+    expect(error.name).toBe('ForbiddenError');
+    expect(error.message).toBe('Unauthorized');
+    expect(error.details).toContain('User suspended');
+  });
+
+
 });
