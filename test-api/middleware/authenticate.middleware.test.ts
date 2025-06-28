@@ -6,6 +6,11 @@ const mockAdmin = {
 
 jest.mock('../../src/features/users/services/jwt.service');
 
+jest.mock('../../src/features/posts/repositories/suspensions.repository', () => ({
+  isUserSuspended: jest.fn().mockResolvedValue(false),
+}));
+
+
 import e, { Request, Response, NextFunction } from 'express';
 import { authenticateJWT } from '../../src/features/middleware/authenticate.middleware';
 import { JwtService } from '../../src/features/users/services/jwt.service';
@@ -73,13 +78,13 @@ describe('Authentication Middleware', () => {
       expect(error.message).toBe('Invalid token format');
     });
 
-    it('should set user role to admin when token is valid with admin role', () => {
+    it('should set user role to admin when token is valid with admin role', async () => {
       mockRequest.headers = { authorization: 'Bearer validToken' };
       const mockDecodedToken = { role: 'admin', email: 'example@ucr.ac.cr', uuid: '12345678' };
       
       (JwtService.prototype.verifyToken as jest.Mock).mockReturnValue(mockDecodedToken);
 
-      authenticateJWT(
+      await authenticateJWT(
         mockRequest as Request,
         mockResponse as Response,
         nextFunction
@@ -89,13 +94,13 @@ describe('Authentication Middleware', () => {
       expect((mockRequest as any).user.role).toBe('admin');
     });
 
-    it('should set user role to user when token is valid with non-admin role', () => {
+    it('should set user role to user when token is valid with non-admin role', async () => {
       mockRequest.headers = { authorization: 'Bearer validToken' };
       const mockDecodedToken = { role: 'user', email: 'example@ucr.ac.cr', uuid: '12345678' };
 
       (JwtService.prototype.verifyToken as jest.Mock).mockReturnValue(mockDecodedToken);
 
-      authenticateJWT(
+      await authenticateJWT(
         mockRequest as Request,
         mockResponse as Response,
         nextFunction
