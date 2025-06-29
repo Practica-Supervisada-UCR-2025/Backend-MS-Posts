@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../users/services/jwt.service';
-import { UnauthorizedError } from '../../utils/errors/api-error';
+import {ForbiddenError, UnauthorizedError} from '../../utils/errors/api-error';
+import {isUserSuspended} from "../../features/posts/repositories/suspensions.repository";
 
 export interface AuthenticatedRequest extends Request {
   user: {
@@ -10,7 +11,15 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-export const authenticateJWT = (req: Request, res: Response, next: NextFunction) => {
+const checkUserSuspension = async (
+    uuid: string,
+) => {
+
+  return await isUserSuspended(uuid);
+}
+
+
+export const authenticateJWT = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -43,6 +52,10 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
     };
     
     (req as any).token = token;
+
+    if (await checkUserSuspension(decoded.uuid) && decoded.role !== 'admin') {
+      throw new ForbiddenError('Unauthorized', ['User suspended']);
+    }
 
     next();
   } catch (error) {
