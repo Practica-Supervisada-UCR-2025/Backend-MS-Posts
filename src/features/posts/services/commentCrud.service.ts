@@ -59,7 +59,7 @@ async function sendCommentNotification({
 }) {
   try {
     await axios.post(
-      'http://localhost:3001/api/push-notifications/send-to-user-comment',
+      'http://backend-notification-app:3001/api/push-notifications/send-to-user-comment',
       {
         userId,
         title,
