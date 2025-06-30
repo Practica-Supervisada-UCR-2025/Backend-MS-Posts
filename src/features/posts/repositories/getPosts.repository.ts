@@ -11,11 +11,21 @@ import { QueryResult } from 'pg'; // Importing QueryResult for type safety
  * @throws Any error thrown by the database client.
  */
 export const getVisiblePostsByUserIdPaginated = async (user_id: string, offset: number, limit: number) => {
-  // Fetching user UUID by email
   const postQuery = `
-    SELECT id, content, file_url, media_type, created_at FROM posts 
-    WHERE user_id = $1 AND status = 1 AND is_active = true
-    ORDER BY created_at DESC 
+    SELECT 
+      p.id, 
+      p.content, 
+      p.file_url, 
+      p.media_type, 
+      p.created_at,
+      (
+        SELECT COUNT(*) 
+        FROM comments c 
+        WHERE c.post_id = p.id
+      ) AS comments_count
+    FROM posts p
+    WHERE p.user_id = $1 AND p.status = 1 AND p.is_active = true
+    ORDER BY p.created_at DESC 
     LIMIT $2 OFFSET $3
   `;
 
