@@ -36,9 +36,21 @@ export const getVisiblePostsByUserIdPaginated = async (user_id: string, offset: 
  */
 export const getVisiblePostsByUserIdAndTime = async (user_id: string, timestamp: string, limit: number) => {
   const postQuery = `
-    SELECT id, user_id, content, file_url, media_type, created_at FROM posts 
-    WHERE user_id = $1 AND status = 1 AND is_active = true AND created_at < $2
-    ORDER BY created_at DESC 
+    SELECT 
+      p.id, 
+      p.user_id, 
+      p.content, 
+      p.file_url, 
+      p.media_type, 
+      p.created_at,
+      (
+        SELECT COUNT(*) 
+        FROM comments c 
+        WHERE c.post_id = p.id
+      ) AS comments_count
+    FROM posts p
+    WHERE p.user_id = $1 AND p.status = 1 AND p.is_active = true AND p.created_at < $2
+    ORDER BY p.created_at DESC 
     LIMIT $3
   `;
 
