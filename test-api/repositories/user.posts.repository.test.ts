@@ -36,7 +36,23 @@ describe('User Posts Repository', () => {
 
       expect(result).toEqual(mockPosts);
       expect(mockClient.query).toHaveBeenCalledWith(
-        expect.stringContaining('SELECT id, content, file_url, media_type, created_at FROM posts'),
+        expect.stringContaining(`
+    SELECT 
+      p.id, 
+      p.content, 
+      p.file_url, 
+      p.media_type, 
+      p.created_at,
+      (
+        SELECT COUNT(*) 
+        FROM comments c 
+        WHERE c.post_id = p.id
+      ) AS comments_count
+    FROM posts p
+    WHERE p.user_id = $1 AND p.status = 1 AND p.is_active = true
+    ORDER BY p.created_at DESC 
+    LIMIT $2 OFFSET $3
+  `),
         ['user-uuid', 10, 0]
       );
     });
@@ -54,7 +70,23 @@ describe('User Posts Repository', () => {
 
       expect(result).toEqual([]);
       expect(mockClient.query).toHaveBeenCalledWith(
-        expect.stringContaining('SELECT id, content, file_url, media_type, created_at FROM posts'),
+        expect.stringContaining(`
+    SELECT 
+      p.id, 
+      p.content, 
+      p.file_url, 
+      p.media_type, 
+      p.created_at,
+      (
+        SELECT COUNT(*) 
+        FROM comments c 
+        WHERE c.post_id = p.id
+      ) AS comments_count
+    FROM posts p
+    WHERE p.user_id = $1 AND p.status = 1 AND p.is_active = true
+    ORDER BY p.created_at DESC 
+    LIMIT $2 OFFSET $3
+  `),
         ['nonexistent-user-id', 10, 0]
       );
     });
